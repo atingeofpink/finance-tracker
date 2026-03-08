@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0F1117" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Finance" />
+  <title>Finance Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; background: #0F1117; font-family: 'DM Sans', 'Segoe UI', sans-serif; color: #E8EAF0; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input, button { font-family: inherit; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #252A3A; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+// ─── THEME ───────────────────────────────────────────────────────────────────
+const BG="#0F1117",CARD="#181C27",BORDER="#252A3A",TEXT="#E8EAF0",MUTED="#7A8099";
+const GREEN="#5BC8A0",YELLOW="#E8C547",RED="#E8547A",BLUE="#5B8DB8",PURPLE="#A78BD4",ORANGE="#E07B4F";
+const PALETTE=["#A78BD4","#5BC8A0","#F4845F","#E8C547","#5B8DB8","#E07B4F","#E8547A","#7EC8C8","#F0A500","#B0C4DE"];
+
+const fmt = n => "SGD " + Math.abs(n).toLocaleString("en-SG",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = d => new Date(d).toLocaleDateString("en-SG",{day:"2-digit",month:"short",year:"numeric"});
+const today = () => new Date().toISOString().split("T")[0];
+const inp = (extra={}) => ({background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:16,padding:"12px 14px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%",...extra});
+
+// ─── SINKING FUNDS ───────────────────────────────────────────────────────────
+const INSURANCE_MILESTONES = [
+  { month:"July 2026", date:"2026-07-01", color:RED, items:[
+    {label:"GE Whole Life",amount:1892.40},{label:"GE Hospitalisation",amount:401.00},
+    {label:"Singlife ECI",amount:1452.00},{label:"Singlife Comprehensive CI",amount:1522.50},
+    {label:"Careshield Life Cash",amount:391.78},{label:"CPF MA Top-up (Careshield)",amount:600.00},
+  ]},
+  { month:"October 2026", date:"2026-10-01", color:ORANGE, items:[
+    {label:"Singlife Term",amount:584.75},{label:"CPF MA Top-up (Careshield)",amount:838.28},
+  ]},
+];
+
+const FUND_META = [
+  {id:"travel",   name:"Travel",           icon:"✈",  color:YELLOW,  monthlyAdd:800 },
+  {id:"insurance",name:"Insurance",         icon:"🛡", color:BLUE,    monthlyAdd:540 },
+  {id:"home",     name:"4TP Maintenance",   icon:"🔧", color:GREEN,   monthlyAdd:165 },
+  {id:"newhome",  name:"New Home",          icon:"🏠", color:PURPLE,  monthlyAdd:1200},
+];
+
+const DEFAULT_BALANCES = {travel:431.51, insurance:1327.55, home:347.69, newhome:235415};
+
+const initFunds = () => FUND_META.reduce((acc,f) => ({
+  ...acc,
+  [f.id]: { balance:DEFAULT_BALANCES[f.id], txns:[{id:1,type:"opening",note:"Opening balance",amount:0,date:today(),balance:DEFAULT_BALANCES[f.id]}] }
+}), {});
+
+function projectedBalance(currentBalance, monthlyAdd, targetMonthIndex) {
+  const cur = new Date().getMonth();
+  return currentBalance + monthlyAdd * Math.max(0, targetMonthIndex - cur);
+}
+
+function SinkingFunds() {
+  const [funds, setFunds] = useState(() => { try { const s=localStorage.getItem("sf-funds"); return s?JSON.parse(s):initFunds(); } catch{ return initFunds(); }});
+  const [activeId, setActiveId] = useState("travel");
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState({amount:"",note:"",date:today()});
+  const [formError, setFormError] = useState("");
+  const [showShortfall, setShowShortfall] = useState(false);
+  const [showTxns, setShowTxns] = useState(true);
+
+  useEffect(() => { try{ localStorage.setItem("sf-funds", JSON.stringify(funds)); }catch{} }, [funds]);
+
+  const activeFund = FUND_META.find(f=>f.id===activeId);
+  const activeData = funds[activeId];
+  const totalBalance = FUND_META.reduce((s,f)=>s+funds[f.id].balance, 0);
+
+  const ins = useMemo(() => {
+    const bal = funds.insurance.balance, mo = 540;
+    const projJuly = projectedBalance(bal, mo, 6);
+    const julyTotal = INSURANCE_MILESTONES[0].items.reduce((s,i)=>s+i.amount,0);
+    const julyShortfall = julyTotal - projJuly;
+    const afterJuly = Math.max(0, projJuly - julyTotal);
+    const projOct = afterJuly + mo*3;
+    const octTotal = INSURANCE_MILESTONES[1].items.reduce((s,i)=>s+i.amount,0);
+    const octShortfall = octTotal - projOct;
+    const extraMonthly = julyShortfall>0 ? Math.ceil(julyShortfall/4) : 0;
+    return {projJuly,julyTotal,julyShortfall,projOct,octTotal,octShortfall,extraMonthly};
+  }, [funds.insurance.balance]);
+
+  const openModal = type => { setForm({amount:"",note:"",date:today()}); setFormError(""); setModal({type,fundId:activeId}); };
+  const closeModal = () => { setModal(null); setFormError(""); };
+
+  const submitTxn = () => {
+    const amt = parseFloat(form.amount);
+    if (!form.amount||isNaN(amt)||amt<=0){ setFormError("Enter a valid amount."); return; }
+    if (modal.type==="withdraw"&&amt>funds[modal.fundId].balance){ setFormError(`Max: ${fmt(funds[modal.fundId].balance)}`); return; }
+    const isDeposit = modal.type==="deposit";
+    setFunds(prev => {
+      const fund = prev[modal.fundId];
+      const newBal = isDeposit ? fund.balance+amt : fund.balance-amt;
+      const txn = {id:Date.now(),type:modal.type,amount:isDeposit?amt:-amt,note:form.note.trim()||(isDeposit?"Deposit":"Withdrawal"),date:form.date,balance:newBal};
+      return {...prev,[modal.fundId]:{balance:newBal,txns:[txn,...fund.txns]}};
+    });
+    closeModal();
+  };
+
+  return (
+    <div style={{padding:"16px 16px 8px"}}>
+      {/* Total */}
+      <div style={{textAlign:"center",marginBottom:16}}>
+        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.1em"}}>Total Across All Funds</div>
+        <div style={{fontSize:28,fontWeight:700,fontFamily:"'DM Mono',monospace",color:GREEN,marginTop:2}}>{fmt(totalBalance)}</div>
+      </div>
+
+      {/* Fund cards grid */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+        {FUND_META.map(f => {
+          const isActive = f.id===activeId;
+          const hasAlert = f.id==="insurance"&&ins.julyShortfall>0;
+          return (
+            <div key={f.id} onClick={()=>setActiveId(f.id)} style={{background:isActive?`${f.color}18`:CARD,border:`1px solid ${isActive?f.color:BORDER}`,borderTop:`3px solid ${f.color}`,borderRadius:12,padding:"14px 12px",cursor:"pointer",position:"relative"}}>
+              {hasAlert && <div style={{position:"absolute",top:8,right:8,width:7,height:7,borderRadius:"50%",background:RED}}/>}
+              <div style={{fontSize:22,marginBottom:6}}>{f.icon}</div>
+              <div style={{fontSize:10,color:MUTED,marginBottom:2}}>{f.name}</div>
+              <div style={{fontSize:15,fontWeight:700,fontFamily:"'DM Mono',monospace",color:f.color}}>{fmt(funds[f.id].balance)}</div>
+              <div style={{fontSize:10,color:f.color,marginTop:4,opacity:0.8}}>+{fmt(f.monthlyAdd).replace("SGD ","")}/mo</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Active fund */}
+      <div style={{background:CARD,border:`1px solid ${activeFund.color}44`,borderRadius:12,overflow:"hidden",marginBottom:12}}>
+        <div style={{padding:"14px 16px",background:`${activeFund.color}0C`,borderBottom:`1px solid ${BORDER}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontWeight:700,fontSize:15}}>{activeFund.icon} {activeFund.name}</div>
+              <div style={{fontSize:12,color:MUTED,fontFamily:"'DM Mono',monospace",marginTop:2}}>
+                Balance: <span style={{color:activeFund.color,fontWeight:700}}>{fmt(activeData.balance)}</span>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>openModal("deposit")} style={{padding:"9px 14px",borderRadius:8,border:`1px solid ${GREEN}`,background:`${GREEN}20`,color:GREEN,fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Add</button>
+              <button onClick={()=>openModal("withdraw")} style={{padding:"9px 14px",borderRadius:8,border:`1px solid ${RED}`,background:`${RED}20`,color:RED,fontWeight:700,fontSize:13,cursor:"pointer"}}>− Use</button>
+            </div>
+          </div>
+        </div>
+
+        <button onClick={()=>setShowTxns(s=>!s)} style={{width:"100%",background:"none",border:"none",borderBottom:showTxns?`1px solid ${BORDER}`:"none",padding:"10px 16px",color:MUTED,fontSize:12,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+          <span>Transaction History ({activeData.txns.length})</span>
+          <span>{showTxns?"▲":"▼"}</span>
+        </button>
+
+        {showTxns && (
+          <div style={{maxHeight:260,overflowY:"auto"}}>
+            {activeData.txns.map((txn,i)=>{
+              const isDeposit=txn.amount>=0, isOpening=txn.type==="opening";
+              return (
+                <div key={txn.id} style={{padding:"11px 16px",borderBottom:i<activeData.txns.length-1?`1px solid ${BORDER}`:"none",background:i%2===0?"transparent":"#13161F"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,color:isOpening?MUTED:TEXT,fontStyle:isOpening?"italic":"normal",marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{txn.note}</div>
+                      <div style={{fontSize:11,color:MUTED}}>{fmtDate(txn.date)}</div>
+                    </div>
+                    <div style={{textAlign:"right",marginLeft:12,flexShrink:0}}>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:600,color:isOpening?MUTED:isDeposit?GREEN:RED}}>
+                        {isOpening?"—":(isDeposit?"+":"−")+fmt(Math.abs(txn.amount)).replace("SGD ","")}
+                      </div>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:MUTED}}>{fmt(txn.balance)}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Insurance shortfall */}
+      {activeId==="insurance" && (
+        <div style={{marginBottom:12}}>
+          <button onClick={()=>setShowShortfall(s=>!s)} style={{width:"100%",background:CARD,border:`1px solid ${showShortfall?BLUE:BORDER}`,borderRadius:showShortfall?"12px 12px 0 0":12,padding:"13px 16px",color:TEXT,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span>📊</span>
+              <span style={{fontWeight:600,fontSize:13}}>Premium Schedule & Shortfall</span>
+              {ins.julyShortfall>0&&<span style={{fontSize:10,color:RED,background:`${RED}18`,padding:"2px 7px",borderRadius:20,fontWeight:700}}>⚠ Shortfall</span>}
+            </div>
+            <span style={{color:MUTED}}>{showShortfall?"▲":"▼"}</span>
+          </button>
+
+          {showShortfall && (
+            <div style={{background:CARD,border:`1px solid ${BLUE}`,borderTop:"none",borderRadius:"0 0 12px 12px",padding:"16px"}}>
+              <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Projected Balance</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+                {[
+                  {label:"Now",value:funds.insurance.balance,color:BLUE},
+                  {label:"By July",value:ins.projJuly,color:ins.projJuly>=ins.julyTotal?GREEN:RED},
+                  {label:"By Oct",value:ins.projOct,color:ins.projOct>=ins.octTotal?GREEN:RED},
+                ].map(({label,value,color})=>(
+                  <div key={label} style={{background:BG,borderRadius:8,padding:"10px 12px",border:`1px solid ${BORDER}`}}>
+                    <div style={{fontSize:10,color:MUTED,marginBottom:3}}>{label}</div>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,color,fontSize:13}}>{fmt(value)}</div>
+                  </div>
+                ))}
+              </div>
+
+              {INSURANCE_MILESTONES.map(ms=>{
+                const total=ms.items.reduce((s,i)=>s+i.amount,0);
+                return (
+                  <div key={ms.month} style={{marginBottom:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <div style={{width:8,height:8,borderRadius:"50%",background:ms.color}}/>
+                        <span style={{fontWeight:700,fontSize:13,color:ms.color}}>{ms.month}</span>
+                      </div>
+                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:ms.color,fontWeight:700}}>{fmt(total)}</span>
+                    </div>
+                    <div style={{background:BG,borderRadius:8,border:`1px solid ${BORDER}`,overflow:"hidden"}}>
+                      {ms.items.map((item,i)=>(
+                        <div key={item.label} style={{display:"flex",justifyContent:"space-between",padding:"9px 12px",borderBottom:i<ms.items.length-1?`1px solid ${BORDER}`:"none",alignItems:"center"}}>
+                          <span style={{fontSize:12,color:TEXT}}>{item.label}</span>
+                          <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:MUTED}}>{fmt(item.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {ins.julyShortfall>0 ? (
+                <div style={{background:`${RED}10`,border:`1px solid ${RED}33`,borderRadius:10,padding:"14px"}}>
+                  <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>⚠ How to Cover the Shortfall</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                    <div style={{background:BG,borderRadius:8,padding:"12px"}}>
+                      <div style={{fontSize:10,color:MUTED,marginBottom:4}}>Option A · Frontload</div>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,color:YELLOW,fontSize:15}}>+{fmt(ins.extraMonthly)}/mo</div>
+                      <div style={{fontSize:11,color:MUTED,marginTop:4}}>Extra Apr–Jul on top of SGD 540</div>
+                    </div>
+                    <div style={{background:BG,borderRadius:8,padding:"12px"}}>
+                      <div style={{fontSize:10,color:MUTED,marginBottom:4}}>Option B · Bonus Top-up</div>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,color:PURPLE,fontSize:15}}>{fmt(ins.julyShortfall)}</div>
+                      <div style={{fontSize:11,color:MUTED,marginTop:4}}>One-time from April bonus</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{background:`${GREEN}10`,border:`1px solid ${GREEN}33`,borderRadius:10,padding:"12px 14px",fontSize:13,color:GREEN}}>✓ Your projected balance covers all premiums.</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <button onClick={()=>{if(window.confirm("Reset all funds to opening balances?"))setFunds(initFunds());}}
+        style={{width:"100%",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"10px",color:MUTED,fontSize:12,cursor:"pointer",marginBottom:8}}>
+        Reset to Opening Balances
+      </button>
+
+      {/* Modal */}
+      {modal && (
+        <div style={{position:"fixed",inset:0,background:"#000000CC",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}} onClick={e=>e.target===e.currentTarget&&closeModal()}>
+          <div style={{background:CARD,borderRadius:"20px 20px 0 0",padding:"24px 20px 48px",width:"100%",maxWidth:500}}>
+            <div style={{width:36,height:4,borderRadius:2,background:BORDER,margin:"0 auto 20px"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <div style={{fontSize:17,fontWeight:700}}>{modal.type==="deposit"?"💰 Add Money":"💸 Use Funds"}</div>
+                <div style={{fontSize:12,color:MUTED,marginTop:2}}>{FUND_META.find(f=>f.id===modal.fundId).name} · {fmt(funds[modal.fundId].balance)}</div>
+              </div>
+              <button onClick={closeModal} style={{background:BORDER,border:"none",borderRadius:"50%",width:32,height:32,color:TEXT,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+              <div>
+                <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Amount (SGD) *</div>
+                <input type="number" inputMode="decimal" placeholder="0.00" value={form.amount} onChange={e=>{setForm(f=>({...f,amount:e.target.value}));setFormError("");}} style={inp({fontSize:24,fontFamily:"'DM Mono',monospace",padding:"14px",textAlign:"center"})} autoFocus />
+              </div>
+              <div>
+                <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Note</div>
+                <input placeholder={modal.type==="deposit"?"e.g. Monthly top-up":"e.g. GE Whole Life premium"} value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={inp()} />
+              </div>
+              <div>
+                <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Date</div>
+                <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} style={inp({colorScheme:"dark"})} />
+              </div>
+              {formError && <div style={{fontSize:13,color:RED,padding:"8px 12px",background:`${RED}15`,borderRadius:8}}>{formError}</div>}
+            </div>
+            <button onClick={submitTxn} style={{width:"100%",marginTop:20,padding:"16px",borderRadius:12,border:"none",background:modal.type==="deposit"?GREEN:RED,color:"#0F1117",fontWeight:700,fontSize:16,cursor:"pointer"}}>
+              {modal.type==="deposit"?"Confirm Deposit":"Confirm Withdrawal"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── BONUS ALLOCATION ────────────────────────────────────────────────────────
+const DEFAULT_ITEMS = [
+  {id:1,label:"Mom",category:"Family",value:3000,color:"#A78BD4"},
+  {id:2,label:"CPF SA Top-up",category:"Retirement",value:4000,color:"#5BC8A0"},
+  {id:3,label:"Treat loved ones",category:"Personal",value:1000,color:"#F4845F"},
+  {id:4,label:"Korea & Australia trip",category:"Travel",value:5000,color:"#E8C547"},
+];
+
+function BonusAllocation() {
+  const [salary, setSalary] = useState(11225);
+  const [multiplier, setMultiplier] = useState(11.5);
+  const [cashPayout, setCashPayout] = useState(32271.88);
+  const [items, setItems] = useState(DEFAULT_ITEMS);
+  const [editingBonus, setEditingBonus] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [newLabel, setNewLabel] = useState("");
+  const [newCat, setNewCat] = useState("");
+  const [newVal, setNewVal] = useState("");
+
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem("bonus-allocation");
+      if (s) { const d=JSON.parse(s); if(d.salary)setSalary(d.salary); if(d.multiplier)setMultiplier(d.multiplier); if(d.cashPayout)setCashPayout(d.cashPayout); if(d.items)setItems(d.items); }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem("bonus-allocation", JSON.stringify({salary,multiplier,cashPayout,items})); } catch {}
+  }, [salary,multiplier,cashPayout,items]);
+
+  const grossBonus = salary * multiplier;
+  const totalSetAside = items.reduce((s,i)=>s+i.value, 0);
+  const remaining = cashPayout - totalSetAside;
+  const overBudget = remaining < 0;
+  const pct = n => ((n/cashPayout)*100).toFixed(1)+"%";
+
+  const addItem = () => {
+    const val = parseFloat(newVal);
+    if (!newLabel.trim()||isNaN(val)||val<=0) return;
+    setItems(prev=>[...prev,{id:Date.now(),label:newLabel.trim(),category:newCat.trim()||"Other",value:val,color:PALETTE[prev.length%PALETTE.length]}]);
+    setNewLabel(""); setNewCat(""); setNewVal(""); setAdding(false);
+  };
+
+  const removeItem = id => setItems(prev=>prev.filter(i=>i.id!==id));
+  const updateField = (id,field,val) => setItems(prev=>prev.map(i=>i.id===id?{...i,[field]:field==="value"?(parseFloat(val)||0):val}:i));
+
+  return (
+    <div style={{padding:"16px 16px 8px"}}>
+      {/* Summary cards */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderTop:`3px solid ${MUTED}`,borderRadius:10,padding:"14px"}}>
+          <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>Gross Bonus</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:14,color:TEXT}}>{fmt(grossBonus)}</div>
+          <div style={{fontSize:10,color:MUTED,marginTop:3}}>{salary.toLocaleString()} × {multiplier}</div>
+        </div>
+        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderTop:`3px solid ${YELLOW}`,borderRadius:10,padding:"14px"}}>
+          <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>Cash Received</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:14,color:YELLOW}}>{fmt(cashPayout)}</div>
+          <div style={{fontSize:10,color:MUTED,marginTop:3}}>April payout</div>
+        </div>
+      </div>
+
+      {/* Big remainder card */}
+      <div style={{background:overBudget?"#1F0D10":"#0D1F18",border:`1px solid ${overBudget?RED:GREEN}44`,borderRadius:12,padding:"16px",marginBottom:16,textAlign:"center"}}>
+        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Available for Investment</div>
+        <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:30,color:overBudget?RED:GREEN}}>{fmt(remaining)}</div>
+        {overBudget&&<div style={{fontSize:12,color:RED,marginTop:4}}>⚠ Set-asides exceed cash received</div>}
+      </div>
+
+      {/* Edit bonus toggle */}
+      <button onClick={()=>setEditingBonus(b=>!b)} style={{width:"100%",background:editingBonus?`${YELLOW}15`:CARD,border:`1px solid ${editingBonus?YELLOW:BORDER}`,borderRadius:editingBonus?"10px 10px 0 0":10,padding:"12px 16px",color:editingBonus?YELLOW:MUTED,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:editingBonus?0:12}}>
+        <span>✎ Edit Bonus Parameters</span>
+        <span>{editingBonus?"▲":"▼"}</span>
+      </button>
+
+      {editingBonus && (
+        <div style={{background:CARD,border:`1px solid ${YELLOW}44`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:"16px",marginBottom:12}}>
+          {[
+            {label:"Monthly Salary (SGD)",value:salary,setter:setSalary,step:100},
+            {label:"Bonus Multiplier (months)",value:multiplier,setter:setMultiplier,step:0.1},
+            {label:"Cash Received (SGD)",value:cashPayout,setter:setCashPayout,step:100},
+          ].map(({label,value,setter,step})=>(
+            <div key={label} style={{marginBottom:12}}>
+              <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>{label}</div>
+              <input type="number" value={value} step={step} onChange={e=>setter(parseFloat(e.target.value)||0)} style={inp({fontFamily:"'DM Mono',monospace"})} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Set-asides list */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:12}}>
+        <div style={{padding:"11px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
+          <span>Set-asides</span><span>Amount · % · Running Total</span>
+        </div>
+        <div style={{padding:"12px 16px",borderBottom:`2px solid ${BORDER}`,background:"#1A2035"}}>
+          <div style={{fontWeight:600,fontSize:13}}>Cash Received</div>
+          <div style={{fontFamily:"'DM Mono',monospace",color:YELLOW,fontWeight:700,fontSize:15,marginTop:2}}>{fmt(cashPayout)}</div>
+        </div>
+
+        {items.map((item,i)=>{
+          const runningTotal = cashPayout - items.slice(0,i+1).reduce((s,x)=>s+x.value,0);
+          const isEditing = editingId===item.id;
+          return (
+            <div key={item.id} style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,background:isEditing?"#131C2A":"transparent"}}>
+              {isEditing ? (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <input value={item.label} onChange={e=>updateField(item.id,"label",e.target.value)} style={inp({fontSize:14})} placeholder="Item name" />
+                  <input value={item.category} onChange={e=>updateField(item.id,"category",e.target.value)} style={inp({fontSize:13})} placeholder="Category" />
+                  <input type="number" value={item.value} onChange={e=>updateField(item.id,"value",e.target.value)} style={inp({fontFamily:"'DM Mono',monospace"})} placeholder="Amount" />
+                  <button onClick={()=>setEditingId(null)} style={{padding:"10px",borderRadius:8,border:`1px solid ${GREEN}`,background:`${GREEN}20`,color:GREEN,fontWeight:700,fontSize:13,cursor:"pointer"}}>Done</button>
+                </div>
+              ) : (
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:3,height:38,borderRadius:2,background:item.color,flexShrink:0}}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:500,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.label}</div>
+                    <div style={{fontSize:11,color:MUTED}}>{item.category}</div>
+                    <div style={{display:"flex",gap:8,marginTop:3,flexWrap:"wrap"}}>
+                      <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontSize:13,fontWeight:600}}>−{fmt(item.value).replace("SGD ","")}</span>
+                      <span style={{color:MUTED,fontSize:12}}>{pct(item.value)}</span>
+                      <span style={{fontFamily:"'DM Mono',monospace",color:runningTotal<0?RED:MUTED,fontSize:12}}>→ {fmt(runningTotal)}</span>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:6,flexShrink:0}}>
+                    <button onClick={()=>setEditingId(item.id)} style={{background:BORDER,border:"none",borderRadius:7,width:32,height:32,color:MUTED,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
+                    <button onClick={()=>removeItem(item.id)} style={{background:BORDER,border:"none",borderRadius:7,width:32,height:32,color:MUTED,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        <div style={{padding:"12px 16px",borderBottom:`2px solid ${BORDER}`,background:"#16111A",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontSize:12,color:MUTED,fontStyle:"italic"}}>Total set-asides</span>
+          <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontWeight:700,fontSize:14}}>−{fmt(totalSetAside).replace("SGD ","")}</span>
+        </div>
+
+        {adding ? (
+          <div style={{padding:"14px 16px"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:12}}>
+              <input placeholder="Item name *" value={newLabel} onChange={e=>setNewLabel(e.target.value)} style={inp()} autoFocus />
+              <input placeholder="Category" value={newCat} onChange={e=>setNewCat(e.target.value)} style={inp()} />
+              <input type="number" placeholder="Amount (SGD) *" value={newVal} onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addItem()} style={inp({fontFamily:"'DM Mono',monospace"})} />
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={addItem} style={{flex:1,padding:"12px",borderRadius:8,border:"none",background:GREEN,color:"#0F1117",fontWeight:700,fontSize:14,cursor:"pointer"}}>Add</button>
+              <button onClick={()=>{setAdding(false);setNewLabel("");setNewCat("");setNewVal("");}} style={{padding:"12px 16px",borderRadius:8,border:`1px solid ${BORDER}`,background:"none",color:MUTED,fontSize:14,cursor:"pointer"}}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={()=>setAdding(true)} style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:MUTED,fontSize:13,cursor:"pointer",textAlign:"left"}}>+ Add set-aside</button>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Breakdown</div>
+        <div style={{height:12,borderRadius:6,overflow:"hidden",display:"flex",background:BORDER}}>
+          {[...items,{label:"Investment",value:Math.max(remaining,0),color:GREEN}].map(item=>(
+            <div key={item.label} style={{width:`${Math.max((item.value/cashPayout)*100,0)}%`,background:item.color,height:"100%",transition:"width 0.3s ease"}}/>
+          ))}
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginTop:10}}>
+          {[...items,{label:"Investment",value:Math.max(remaining,0),color:GREEN}].map(item=>(
+            <div key={item.label} style={{display:"flex",alignItems:"center",gap:5,fontSize:11}}>
+              <div style={{width:7,height:7,borderRadius:"50%",background:item.color}}/>
+              <span style={{color:MUTED}}>{item.label}</span>
+              <span style={{color:TEXT,fontFamily:"'DM Mono',monospace"}}>{pct(item.value)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{fontSize:11,color:MUTED,textAlign:"center",paddingBottom:8}}>
+        Gross: {fmt(grossBonus)} · Remaining unpaid: {fmt(grossBonus-cashPayout)}
+      </div>
+    </div>
+  );
+}
+
+// ─── APP SHELL ───────────────────────────────────────────────────────────────
+const TABS = [
+  {id:"sinking", label:"Sinking Funds", icon:"🪣"},
+  {id:"bonus",   label:"Bonus",         icon:"💰"},
+];
+
+function App() {
+  const [tab, setTab] = useState("sinking");
+
+  return (
+    <div style={{minHeight:"100vh",background:BG,color:TEXT,paddingBottom:80}}>
+      {/* Top bar */}
+      <div style={{position:"sticky",top:0,zIndex:50,background:CARD,borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div>
+          <div style={{fontSize:10,color:MUTED,letterSpacing:"0.1em",textTransform:"uppercase"}}>Personal Finance</div>
+          <div style={{fontSize:17,fontWeight:700,letterSpacing:"-0.01em"}}>{TABS.find(t=>t.id===tab)?.icon} {TABS.find(t=>t.id===tab)?.label}</div>
+        </div>
+        <div style={{fontSize:11,color:MUTED}}>2026</div>
+      </div>
+
+      {tab==="sinking" && <SinkingFunds />}
+      {tab==="bonus"   && <BonusAllocation />}
+
+      {/* Bottom nav */}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:CARD,borderTop:`1px solid ${BORDER}`,display:"flex",paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {TABS.map(t=>{
+          const active = tab===t.id;
+          return (
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"12px 8px 10px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,borderTop:`2px solid ${active?YELLOW:"transparent"}`}}>
+              <span style={{fontSize:20}}>{t.icon}</span>
+              <span style={{fontSize:10,fontWeight:600,color:active?YELLOW:MUTED,letterSpacing:"0.04em"}}>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
