@@ -503,197 +503,266 @@ const FLEX_CATS = [
   {id:"gifts",    label:"Gifts",                                 icon:"🎁"},
 ];
 
-// Base flexible spending budget per period (excl. extra income)
-const BASE_FLEX_BUDGET = (monthIdx) => monthIdx <= 3 ? 2135.72 : 2079.72;
+// Built-in defaults — flex is derived automatically
+const DEFAULT_BUDGET = (m) => ({
+  income:    11420,
+  rent:      1807.28,
+  tax:       m <= 3 ? 1354 : 1410,
+  insurance: 540,
+  nonneg:    571.12,
+  gym:       463,
+  travel:    800,
+  savings:   3600,
+  extra:     0,
+});
+const calcFlex = (b) => Math.round((b.income + b.extra - b.rent - b.tax - b.insurance - b.nonneg - b.gym - b.travel - b.savings) * 100) / 100;
 
-const initMonthData = () => {
+// Carry-forward: find effective budget for a month by applying all overrides
+// from month 0 up to monthIdx in order (later overrides win)
+const getEffectiveBudget = (overrides, monthIdx) => {
+  const base = DEFAULT_BUDGET(monthIdx);
+  for (let m = 0; m <= monthIdx; m++) {
+    if (overrides[m]) Object.assign(base, overrides[m]);
+  }
+  return base;
+};
+
+const BUDGET_ROWS = [
+  {id:"income",    label:"Income",            icon:"💵", color:"#5BC8A0", isIncome:true},
+  {id:"extra",     label:"Extra Income",      icon:"🎉", color:"#5BC8A0", isIncome:true, hint:"Windfalls, bonuses, one-offs"},
+  {id:"rent",      label:"Rent",              icon:"🏠", color:"#A78BD4"},
+  {id:"tax",       label:"Income Tax",        icon:"📋", color:"#E8547A"},
+  {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#5B8DB8"},
+  {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#5BC8A0", hint:"Utilities · Parents · Transport · Digital Subs"},
+  {id:"gym",       label:"Gym",               icon:"🏋️", color:"#E8C547"},
+  {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#F4845F"},
+  {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#5B8DB8"},
+];
+
+const initSpending = () => {
   const d = {};
-  for (let m=0; m<12; m++) d[m] = {food:"", beauty:"", shopping:"", home_ent:"", cab:"", gifts:"", extra_income:""};
+  for (let m = 0; m < 12; m++) d[m] = {food:"",beauty:"",shopping:"",home_ent:"",cab:"",gifts:""};
   return d;
 };
 
 function MonthlyTracker() {
-  const [monthIdx, setMonthIdx] = useState(new Date().getMonth());
-  const [allData, setAllData] = useState(() => {
-    try { const s=localStorage.getItem("monthly-tracker"); return s?JSON.parse(s):initMonthData(); } catch { return initMonthData(); }
+  const [monthIdx,  setMonthIdx]  = useState(new Date().getMonth());
+  const [activeTab, setActiveTab] = useState("spending");
+
+  const [overrides, setOverrides] = useState(() => {
+    try { const s = localStorage.getItem("budget-overrides"); return s ? JSON.parse(s) : {}; } catch { return {}; }
+  });
+  const [spending, setSpending] = useState(() => {
+    try { const s = localStorage.getItem("monthly-tracker"); return s ? JSON.parse(s) : initSpending(); } catch { return initSpending(); }
   });
 
-  useEffect(() => { try { localStorage.setItem("monthly-tracker", JSON.stringify(allData)); } catch {} }, [allData]);
+  useEffect(() => { try { localStorage.setItem("budget-overrides", JSON.stringify(overrides)); } catch {} }, [overrides]);
+  useEffect(() => { try { localStorage.setItem("monthly-tracker",  JSON.stringify(spending));  } catch {} }, [spending]);
 
-  const data = allData[monthIdx] || initMonthData()[monthIdx];
-  const setVal = (id, val) => setAllData(prev => ({...prev, [monthIdx]: {...(prev[monthIdx]||{}), [id]: val}}));
+  const budget     = getEffectiveBudget(overrides, monthIdx);
+  const flexBudget = calcFlex(budget);
+  const spendData  = spending[monthIdx] || {};
+  const isModified = !!overrides[monthIdx];
 
-  const extraIncome   = parseFloat(data.extra_income) || 0;
-  const baseBudget    = BASE_FLEX_BUDGET(monthIdx);
-  const totalBudget   = baseBudget + extraIncome;
-  const totalSpent    = FLEX_CATS.reduce((s,c) => s + (parseFloat(data[c.id])||0), 0);
-  const totalLeft     = totalBudget - totalSpent;
-  const anyEntered    = FLEX_CATS.some(c => parseFloat(data[c.id]) > 0);
-  const pctUsed       = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
+  // Update budget: stores override on this month only; carry-forward happens via getEffectiveBudget
+  const setBudgetVal = (id, raw) => {
+    const val = parseFloat(raw);
+    if (isNaN(val) || val < 0) return;
+    setOverrides(prev => ({...prev, [monthIdx]: {...(prev[monthIdx]||{}), [id]: val}}));
+  };
+  const setSpendVal = (id, val) => setSpending(prev => ({...prev, [monthIdx]: {...(prev[monthIdx]||{}), [id]: val}}));
+
+  const totalSpent = FLEX_CATS.reduce((s,c) => s + (parseFloat(spendData[c.id])||0), 0);
+  const totalLeft  = flexBudget - totalSpent;
+  const anySpend   = FLEX_CATS.some(c => parseFloat(spendData[c.id]) > 0);
+  const pctUsed    = flexBudget > 0 ? Math.min((totalSpent/flexBudget)*100, 100) : 0;
+
+  const inp = (val, onChange, color) => (
+    <input type="number" inputMode="decimal" value={val} onChange={e=>onChange(e.target.value)}
+      style={{background:"#0A0D14",border:`1px solid #252A3A`,borderRadius:8,color:color||"#E8EAF0",
+        fontSize:15,fontFamily:"'DM Mono',monospace",padding:"8px 10px",width:128,textAlign:"right",outline:"none",flexShrink:0}} />
+  );
 
   return (
     <div style={{padding:"16px 16px 8px"}}>
 
       {/* Month selector */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,background:CARD,borderRadius:12,padding:"12px 16px",border:`1px solid ${BORDER}`}}>
-        <button onClick={()=>setMonthIdx(m=>Math.max(0,m-1))} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:38,height:38,color:TEXT,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,background:"#181C27",borderRadius:12,padding:"12px 16px",border:"1px solid #252A3A"}}>
+        <button onClick={()=>setMonthIdx(m=>Math.max(0,m-1))} style={{background:"none",border:"1px solid #252A3A",borderRadius:8,width:38,height:38,color:"#E8EAF0",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
         <div style={{textAlign:"center"}}>
           <div style={{fontWeight:700,fontSize:20}}>{MONTHS[monthIdx]} 2026</div>
-          <div style={{fontSize:11,color:MUTED,marginTop:2}}>{monthIdx<=3?"Jan–Apr budget":"May–Dec budget"}</div>
-        </div>
-        <button onClick={()=>setMonthIdx(m=>Math.min(11,m+1))} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:38,height:38,color:TEXT,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
-      </div>
-
-      {/* Summary card */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px",marginBottom:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:12}}>
-          <div>
-            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Flexible Spending</div>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:28,fontWeight:700,color:totalSpent>totalBudget?RED:TEXT}}>
-              {fmt(totalSpent)}
-            </div>
-            <div style={{fontSize:12,color:MUTED,marginTop:3}}>
-              of <span style={{color:extraIncome>0?GREEN:TEXT,fontFamily:"'DM Mono',monospace"}}>{fmt(totalBudget)}</span> budget
-              {extraIncome>0 && <span style={{color:GREEN,fontSize:11}}> (+{fmt(extraIncome).replace("SGD ","")} extra)</span>}
-            </div>
-          </div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:11,color:MUTED,marginBottom:3}}>Remaining</div>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:20,fontWeight:700,color:totalLeft>=0?GREEN:RED}}>
-              {totalLeft>=0 ? fmt(totalLeft) : `−${fmt(Math.abs(totalLeft))}`}
-            </div>
+          <div style={{marginTop:4,minHeight:18}}>
+            {isModified
+              ? <span style={{fontSize:10,color:"#E8C547",background:"#E8C54718",padding:"2px 8px",borderRadius:10}}>✎ Budget edited</span>
+              : <span style={{fontSize:11,color:"#7A8099"}}>Default budget</span>}
           </div>
         </div>
-
-        {/* Overall progress bar */}
-        <div style={{height:8,borderRadius:4,background:BORDER,overflow:"hidden"}}>
-          <div style={{
-            width:`${pctUsed}%`, height:"100%", borderRadius:4, transition:"width 0.4s ease",
-            background: totalSpent>totalBudget ? RED : pctUsed>85 ? ORANGE : GREEN,
-          }}/>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:MUTED}}>
-          <span>SGD 0</span>
-          <span>{Math.round(pctUsed)||0}% used</span>
-          <span>{fmt(totalBudget)}</span>
-        </div>
+        <button onClick={()=>setMonthIdx(m=>Math.min(11,m+1))} style={{background:"none",border:"1px solid #252A3A",borderRadius:8,width:38,height:38,color:"#E8EAF0",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
       </div>
 
-      {/* Extra income input */}
-      <div style={{background:CARD,border:`1px solid ${extraIncome>0?GREEN+"66":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3}}>
-              <span style={{fontSize:16}}>🎉</span>
-              <span style={{fontSize:13,fontWeight:600}}>Extra Income</span>
-            </div>
-            <div style={{fontSize:11,color:MUTED}}>Windfalls, bonuses, side income — automatically added to your budget</div>
-          </div>
-          <input
-            type="number" inputMode="decimal" placeholder="0.00"
-            value={data.extra_income}
-            onChange={e=>setVal("extra_income", e.target.value)}
-            style={{
-              background:"#0A0D14", border:`1px solid ${extraIncome>0?GREEN:BORDER}`,
-              borderRadius:8, color:extraIncome>0?GREEN:TEXT, fontSize:16,
-              fontFamily:"'DM Mono',monospace", padding:"9px 12px",
-              width:120, textAlign:"right", outline:"none", flexShrink:0, marginLeft:12,
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Category rows */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:12}}>
-        <div style={{padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
-          <span>Category</span><span>Spent</span>
-        </div>
-        {FLEX_CATS.map((cat, i) => {
-          const spent = parseFloat(data[cat.id]) || 0;
-          const sharePct = totalSpent > 0 ? ((spent/totalSpent)*100).toFixed(0) : 0;
-          return (
-            <div key={cat.id} style={{padding:"12px 16px",borderBottom:i<FLEX_CATS.length-1?`1px solid ${BORDER}`:"none",display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:16,flexShrink:0}}>{cat.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:500,marginBottom:4}}>{cat.label}</div>
-                {/* Share bar — shows what % of total spending this category is */}
-                <div style={{height:4,borderRadius:2,background:BORDER,overflow:"hidden"}}>
-                  <div style={{width:`${sharePct}%`,height:"100%",background:YELLOW,borderRadius:2,transition:"width 0.3s ease"}}/>
-                </div>
-                {spent>0 && <div style={{fontSize:10,color:MUTED,marginTop:3}}>{sharePct}% of total spending</div>}
-              </div>
-              <input
-                type="number" inputMode="decimal" placeholder="0.00"
-                value={data[cat.id]}
-                onChange={e=>setVal(cat.id, e.target.value)}
-                style={{
-                  background:"#0A0D14", border:`1px solid ${BORDER}`,
-                  borderRadius:8, color:TEXT, fontSize:15,
-                  fontFamily:"'DM Mono',monospace", padding:"8px 10px",
-                  width:110, textAlign:"right", outline:"none", flexShrink:0,
-                }}
-              />
-            </div>
-          );
-        })}
-        {/* Total row */}
-        <div style={{padding:"12px 16px",background:"#13161F",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`2px solid ${BORDER}`}}>
-          <span style={{fontSize:13,fontWeight:700}}>Total Spent</span>
-          <span style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:totalSpent>totalBudget?RED:TEXT}}>{fmt(totalSpent)}</span>
-        </div>
-      </div>
-
-      {/* Full month snapshot */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8}}>
-        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>Full Month Snapshot</div>
-        {[
-          {label:"Rent",                            value:1807.28,                color:PURPLE},
-          {label:"Income Tax",                      value:monthIdx<=3?1354:1410,  color:RED,   note:monthIdx<=3?"incl. provision":"net drawdown"},
-          {label:"Insurance",                       value:540,                    color:BLUE},
-          {label:"Non-negotiables",                 value:520,                    color:GREEN},
-          {label:"Gym",                             value:463,                    color:YELLOW},
-          {label:"Flexible Spending",               value:totalBudget, actual:anyEntered?totalSpent:null, color:YELLOW},
-          {label:"Travel (set-aside)",              value:800,                    color:ORANGE},
-          {label:"Savings & Invest.",               value:3600,                   color:GREEN},
-        ].map(({label,value,actual,color,note})=>(
-          <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
-            <div style={{display:"flex",alignItems:"center",gap:7,flex:1,minWidth:0}}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:color,flexShrink:0}}/>
-              <div style={{minWidth:0}}>
-                <span style={{fontSize:12,color:MUTED}}>{label}</span>
-                {note && <span style={{fontSize:10,color:MUTED,marginLeft:5}}>({note})</span>}
-              </div>
-            </div>
-            <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
-              {actual != null ? (
-                <div>
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:actual>value?RED:GREEN}}>{fmt(actual)}</span>
-                  <span style={{fontSize:10,color:MUTED}}> / {fmt(value)}</span>
-                </div>
-              ) : (
-                <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:TEXT}}>{fmt(value)}</span>
-              )}
-            </div>
-          </div>
+      {/* Tab switcher */}
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        {[{id:"spending",label:"💸 Spending"},{id:"budget",label:"⚙️ Budget"}].map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{
+            flex:1,padding:"10px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,
+            border:`1px solid ${activeTab===t.id?"#E8C547":"#252A3A"}`,
+            background:activeTab===t.id?"#E8C54718":"none",
+            color:activeTab===t.id?"#E8C547":"#7A8099",
+          }}>{t.label}</button>
         ))}
-        {extraIncome > 0 && (
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
-            <div style={{display:"flex",alignItems:"center",gap:7}}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:GREEN,flexShrink:0}}/>
-              <span style={{fontSize:12,color:GREEN}}>🎉 Extra Income</span>
-            </div>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:GREEN}}>+{fmt(extraIncome)}</span>
-          </div>
-        )}
-        <div style={{borderTop:`1px solid ${BORDER}`,marginTop:6,paddingTop:10,display:"flex",justifyContent:"space-between"}}>
-          <span style={{fontSize:13,fontWeight:700}}>Total Budget</span>
-          <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:YELLOW}}>{fmt(11420 + extraIncome)}</span>
-        </div>
       </div>
+
+      {/* ── SPENDING TAB ── */}
+      {activeTab==="spending" && <>
+
+        {/* Flex summary */}
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"16px",marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:12}}>
+            <div>
+              <div style={{fontSize:11,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Flexible Spending</div>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:28,fontWeight:700,color:totalSpent>flexBudget?"#E85454":"#E8EAF0"}}>{fmt(totalSpent)}</div>
+              <div style={{fontSize:12,color:"#7A8099",marginTop:3}}>of <span style={{fontFamily:"'DM Mono',monospace",color:"#E8EAF0"}}>{fmt(flexBudget)}</span> budget</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:11,color:"#7A8099",marginBottom:3}}>Remaining</div>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:20,fontWeight:700,color:totalLeft>=0?"#5BC8A0":"#E85454"}}>
+                {totalLeft>=0?fmt(totalLeft):`−${fmt(Math.abs(totalLeft))}`}
+              </div>
+            </div>
+          </div>
+          <div style={{height:8,borderRadius:4,background:"#252A3A",overflow:"hidden"}}>
+            <div style={{width:`${pctUsed}%`,height:"100%",borderRadius:4,transition:"width 0.4s ease",
+              background:totalSpent>flexBudget?"#E85454":pctUsed>85?"#F4845F":"#5BC8A0"}}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"#7A8099"}}>
+            <span>SGD 0</span><span>{Math.round(pctUsed)||0}% used</span><span>{fmt(flexBudget)}</span>
+          </div>
+        </div>
+
+        {/* Spending rows */}
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
+          <div style={{padding:"10px 16px",borderBottom:"1px solid #252A3A",fontSize:10,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
+            <span>Category</span><span>Spent this month</span>
+          </div>
+          {FLEX_CATS.map((cat,i)=>{
+            const spent = parseFloat(spendData[cat.id])||0;
+            const sharePct = totalSpent>0?Math.round((spent/totalSpent)*100):0;
+            return (
+              <div key={cat.id} style={{padding:"12px 16px",borderBottom:i<FLEX_CATS.length-1?"1px solid #252A3A":"none",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:16,flexShrink:0}}>{cat.icon}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:500,marginBottom:4}}>{cat.label}</div>
+                  <div style={{height:4,borderRadius:2,background:"#252A3A",overflow:"hidden"}}>
+                    <div style={{width:`${sharePct}%`,height:"100%",background:"#E8C547",borderRadius:2,transition:"width 0.3s ease"}}/>
+                  </div>
+                  {spent>0&&<div style={{fontSize:10,color:"#7A8099",marginTop:3}}>{sharePct}% of total spending</div>}
+                </div>
+                {inp(spendData[cat.id]||"", v=>setSpendVal(cat.id,v))}
+              </div>
+            );
+          })}
+          <div style={{padding:"12px 16px",background:"#13161F",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"2px solid #252A3A"}}>
+            <span style={{fontSize:13,fontWeight:700}}>Total Spent</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:totalSpent>flexBudget?"#E85454":"#E8EAF0"}}>{fmt(totalSpent)}</span>
+          </div>
+        </div>
+
+        {/* Full month snapshot */}
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"14px 16px",marginBottom:8}}>
+          <div style={{fontSize:11,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>Full Month Snapshot</div>
+          {[
+            {label:"Income",           value:budget.income,    color:"#5BC8A0"},
+            ...(budget.extra>0?[{label:"🎉 Extra Income", value:budget.extra, color:"#5BC8A0"}]:[]),
+            {label:"Rent",             value:budget.rent,      color:"#A78BD4"},
+            {label:"Income Tax",       value:budget.tax,       color:"#E8547A"},
+            {label:"Insurance",        value:budget.insurance, color:"#5B8DB8"},
+            {label:"Non-negotiables",  value:budget.nonneg,    color:"#5BC8A0"},
+            {label:"Gym",              value:budget.gym,       color:"#E8C547"},
+            {label:"Flexible Spending",value:flexBudget, actual:anySpend?totalSpent:null, color:"#F4845F"},
+            {label:"Travel Fund",      value:budget.travel,    color:"#F4845F"},
+            {label:"Savings & Invest.",value:budget.savings,   color:"#5B8DB8"},
+          ].map(({label,value,actual,color})=>(
+            <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+              <div style={{display:"flex",alignItems:"center",gap:7,flex:1,minWidth:0}}>
+                <div style={{width:6,height:6,borderRadius:"50%",background:color,flexShrink:0}}/>
+                <span style={{fontSize:12,color:"#7A8099"}}>{label}</span>
+              </div>
+              <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
+                {actual!=null?(
+                  <span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:actual>value?"#E85454":"#5BC8A0"}}>{fmt(actual)}</span>
+                    <span style={{fontSize:10,color:"#7A8099"}}> / {fmt(value)}</span>
+                  </span>
+                ):(
+                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:label.includes("Income")?"#5BC8A0":"#E8EAF0"}}>{fmt(value)}</span>
+                )}
+              </div>
+            </div>
+          ))}
+          <div style={{borderTop:"1px solid #252A3A",marginTop:6,paddingTop:10,display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontSize:13,fontWeight:700}}>Total Income</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:"#5BC8A0"}}>{fmt(budget.income+(budget.extra||0))}</span>
+          </div>
+        </div>
+      </>}
+
+      {/* ── BUDGET TAB ── */}
+      {activeTab==="budget" && <>
+        <div style={{background:"#E8C54712",border:"1px solid #E8C54733",borderRadius:10,padding:"10px 14px",marginBottom:12,fontSize:12,color:"#7A8099",lineHeight:1.6}}>
+          ⚙️ Changes from <strong style={{color:"#E8EAF0"}}>{MONTHS[monthIdx]}</strong> carry forward to all later months automatically. Flexible spending adjusts to keep the budget balanced.
+        </div>
+
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
+          {BUDGET_ROWS.map((row,i)=>(
+            <div key={row.id} style={{
+              padding:"13px 16px",
+              borderBottom:i<BUDGET_ROWS.length-1?"1px solid #252A3A":"none",
+              background:row.isIncome?"#0D1A140A":"none",
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+            }}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:row.hint?3:0}}>
+                  <span style={{fontSize:15}}>{row.icon}</span>
+                  <span style={{fontSize:13,fontWeight:600,color:row.color}}>{row.label}</span>
+                </div>
+                {row.hint&&<div style={{fontSize:10,color:"#7A8099",paddingLeft:22}}>{row.hint}</div>}
+              </div>
+              {inp(budget[row.id]||"", v=>setBudgetVal(row.id, v), row.isIncome?"#5BC8A0":undefined)}
+            </div>
+          ))}
+        </div>
+
+        {/* Derived flex result */}
+        <div style={{
+          background:flexBudget<0?"#1F0D10":"#0D1F18",
+          border:`1px solid ${flexBudget<0?"#E8545444":"#5BC8A044"}`,
+          borderRadius:12,padding:"14px 16px",marginBottom:12,
+          display:"flex",justifyContent:"space-between",alignItems:"center",
+        }}>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:flexBudget<0?"#E85454":"#5BC8A0"}}>🛍️ Flexible Spending Budget</div>
+            <div style={{fontSize:11,color:"#7A8099",marginTop:3}}>Auto-calculated · Income minus all expenses</div>
+            {flexBudget<0&&<div style={{fontSize:11,color:"#E85454",marginTop:4}}>⚠ Over by {fmt(Math.abs(flexBudget))} — reduce an expense above</div>}
+          </div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:22,fontWeight:700,color:flexBudget<0?"#E85454":"#5BC8A0",flexShrink:0,marginLeft:12}}>{fmt(flexBudget)}</div>
+        </div>
+
+        {/* Reset this month */}
+        {isModified&&(
+          <button onClick={()=>{
+            if(window.confirm(`Reset ${MONTHS[monthIdx]}'s budget to default?\n\nThis only affects ${MONTHS[monthIdx]} — earlier months and later months that inherited from here will re-compute from the previous override or default.`)){
+              setOverrides(prev=>{const n={...prev};delete n[monthIdx];return n;});
+            }
+          }} style={{width:"100%",background:"none",border:"1px solid #252A3A",borderRadius:8,padding:"10px",color:"#7A8099",fontSize:12,cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
+            ↩ Reset {MONTHS[monthIdx]} to inherited default
+          </button>
+        )}
+      </>}
 
     </div>
   );
 }
+
 
 // ─── APP SHELL ───────────────────────────────────────────────────────────────
 const TABS = [
@@ -854,7 +923,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.0.7";
+const APP_VERSION = "1.1.0";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
