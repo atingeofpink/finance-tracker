@@ -495,7 +495,7 @@ function BonusAllocation() {
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 const FLEX_CATS = [
-  {id:"food",     label:"Food & Dining",                         icon:"🍜"},
+  {id:"food",     label:"Food & Groceries",                      icon:"🍜"},
   {id:"beauty",   label:"Beauty",                                icon:"💅"},
   {id:"shopping", label:"Shopping",                              icon:"🛍️"},
   {id:"home_ent", label:"Home, Entertainment, Sports, Personal", icon:"🎮"},
@@ -700,7 +700,117 @@ const TABS = [
   {id:"monthly", label:"Monthly",      icon:"📅"},
   {id:"sinking", label:"Sinking Funds",icon:"🪣"},
   {id:"bonus",   label:"Bonus",        icon:"💰"},
+  {id:"settings",label:"Backup",       icon:"💾"},
 ];
+
+function BackupRestore() {
+  const [imported, setImported] = useState(false);
+  const [error, setError] = useState("");
+
+  const exportData = () => {
+    const data = {
+      version: "1.0.4",
+      exported: new Date().toISOString(),
+      "monthly-tracker":    localStorage.getItem("monthly-tracker"),
+      "sf-funds":           localStorage.getItem("sf-funds"),
+      "bonus-allocation":   localStorage.getItem("bonus-allocation"),
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], {type:"application/json"});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    const date = new Date().toISOString().split("T")[0];
+    a.href     = url;
+    a.download = `finance-backup-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = (e) => {
+    setError("");
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data["monthly-tracker"])  localStorage.setItem("monthly-tracker",  data["monthly-tracker"]);
+        if (data["sf-funds"])         localStorage.setItem("sf-funds",         data["sf-funds"]);
+        if (data["bonus-allocation"]) localStorage.setItem("bonus-allocation", data["bonus-allocation"]);
+        setImported(true);
+        setTimeout(() => window.location.reload(), 1200);
+      } catch {
+        setError("Invalid backup file. Please use a file exported from this app.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div style={{padding:"16px"}}>
+      <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:16}}>Data Backup & Restore</div>
+
+      {/* Export */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"18px",marginBottom:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:22}}>📤</span>
+          <div>
+            <div style={{fontWeight:700,fontSize:15}}>Export Backup</div>
+            <div style={{fontSize:12,color:MUTED,marginTop:2}}>Save all your data as a file on your device</div>
+          </div>
+        </div>
+        <div style={{fontSize:12,color:MUTED,marginBottom:14,lineHeight:1.6}}>
+          This exports everything — your sinking fund transactions, bonus allocation, and all monthly spending figures — into a single backup file. Keep it somewhere safe like your Files app or email it to yourself.
+        </div>
+        <button onClick={exportData} style={{
+          width:"100%", padding:"14px", borderRadius:10,
+          border:"none", background:GREEN, color:"#0F1117",
+          fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:"inherit",
+        }}>
+          📥 Download Backup File
+        </button>
+      </div>
+
+      {/* Import */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"18px",marginBottom:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:22}}>📥</span>
+          <div>
+            <div style={{fontWeight:700,fontSize:15}}>Restore from Backup</div>
+            <div style={{fontSize:12,color:MUTED,marginTop:2}}>Load a previously exported backup file</div>
+          </div>
+        </div>
+        <div style={{fontSize:12,color:MUTED,marginBottom:14,lineHeight:1.6}}>
+          Select a backup file you exported earlier. This will restore all your data and reload the app. Your current data will be overwritten.
+        </div>
+        {imported ? (
+          <div style={{padding:"12px",borderRadius:10,background:`${GREEN}18`,border:`1px solid ${GREEN}44`,color:GREEN,fontSize:13,fontWeight:600,textAlign:"center"}}>
+            ✓ Data restored! Reloading...
+          </div>
+        ) : (
+          <label style={{
+            display:"block", width:"100%", padding:"14px", borderRadius:10,
+            border:`2px dashed ${BORDER}`, color:MUTED, fontWeight:700,
+            fontSize:15, cursor:"pointer", fontFamily:"inherit",
+            textAlign:"center", boxSizing:"border-box",
+          }}>
+            📂 Choose Backup File
+            <input type="file" accept=".json" onChange={importData} style={{display:"none"}} />
+          </label>
+        )}
+        {error && <div style={{marginTop:10,padding:"10px 12px",borderRadius:8,background:`${RED}15`,color:RED,fontSize:12}}>{error}</div>}
+      </div>
+
+      {/* Tip */}
+      <div style={{background:CARD,border:`1px solid ${YELLOW}33`,borderRadius:12,padding:"14px 16px"}}>
+        <div style={{fontSize:12,color:YELLOW,fontWeight:600,marginBottom:6}}>💡 When to back up</div>
+        <div style={{fontSize:12,color:MUTED,lineHeight:1.6}}>
+          Back up after entering your monthly spending, after adding sinking fund transactions, or any time before clearing your browser data. Store it in iCloud, Google Drive, or email it to yourself.
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [tab, setTab] = useState("monthly");
@@ -716,9 +826,10 @@ function App() {
         <div style={{fontSize:11,color:MUTED}}>2026</div>
       </div>
 
-      {tab==="monthly" && <MonthlyTracker />}
-      {tab==="sinking" && <SinkingFunds />}
-      {tab==="bonus"   && <BonusAllocation />}
+      {tab==="monthly"  && <MonthlyTracker />}
+      {tab==="sinking"  && <SinkingFunds />}
+      {tab==="bonus"    && <BonusAllocation />}
+      {tab==="settings" && <BackupRestore />}
 
       {/* Bottom nav */}
       <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:CARD,borderTop:`1px solid ${BORDER}`,display:"flex",paddingBottom:"env(safe-area-inset-bottom)"}}>
@@ -743,7 +854,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.0.4";
+const APP_VERSION = "1.0.7";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
