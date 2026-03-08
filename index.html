@@ -308,128 +308,120 @@ function SinkingFunds() {
 }
 
 // ─── BONUS ALLOCATION ────────────────────────────────────────────────────────
-const DEFAULT_ITEMS = [
-  {id:1,label:"Mom",category:"Family",value:3000,color:"#A78BD4"},
-  {id:2,label:"CPF SA Top-up",category:"Retirement",value:4000,color:"#5BC8A0"},
-  {id:3,label:"Treat loved ones",category:"Personal",value:1000,color:"#F4845F"},
-  {id:4,label:"Korea & Australia trip",category:"Travel",value:5000,color:"#E8C547"},
-];
 
-function BonusAllocation() {
-  const [salary, setSalary] = useState(11225);
-  const [multiplier, setMultiplier] = useState(11.5);
-  const [cashPayout, setCashPayout] = useState(32271.88);
-  const [items, setItems] = useState(DEFAULT_ITEMS);
-  const [editingBonus, setEditingBonus] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [newLabel, setNewLabel] = useState("");
-  const [newCat, setNewCat] = useState("");
-  const [newVal, setNewVal] = useState("");
+const DEFAULT_BONUSES = [{
+  id: 1,
+  name: "Annual Bonus",
+  month: "April",
+  salary: 11225,
+  multiplier: 11.5,
+  grossBonus: 129087.50,
+  cashReceived: 32271.88,
+  items: [
+    {id:101,label:"Mom",category:"Family",value:3000,color:"#A78BD4"},
+    {id:102,label:"CPF SA Top-up",category:"Retirement",value:4000,color:"#5BC8A0"},
+    {id:103,label:"Treat loved ones",category:"Personal",value:1000,color:"#F4845F"},
+    {id:104,label:"Korea & Australia trip",category:"Travel",value:5000,color:"#E8C547"},
+  ],
+}];
 
-  useEffect(() => {
-    try {
-      const s = localStorage.getItem("bonus-allocation");
-      if (s) { const d=JSON.parse(s); if(d.salary)setSalary(d.salary); if(d.multiplier)setMultiplier(d.multiplier); if(d.cashPayout)setCashPayout(d.cashPayout); if(d.items)setItems(d.items); }
-    } catch {}
-  }, []);
+function BonusDetail({bonus, onChange}) {
+  const [editingParams, setEditingParams] = useState(false);
+  const [adding, setAdding]               = useState(false);
+  const [editingId, setEditingId]         = useState(null);
+  const [newLabel, setNewLabel]           = useState("");
+  const [newCat, setNewCat]               = useState("");
+  const [newVal, setNewVal]               = useState("");
 
-  useEffect(() => {
-    try { localStorage.setItem("bonus-allocation", JSON.stringify({salary,multiplier,cashPayout,items})); } catch {}
-  }, [salary,multiplier,cashPayout,items]);
+  const {name,month,cashReceived,items} = bonus;
+  const totalSetAside = items.reduce((s,i)=>s+i.value,0);
+  const remaining     = cashReceived - totalSetAside;
+  const over          = remaining < 0;
+  const pct           = n => cashReceived > 0 ? ((n/cashReceived)*100).toFixed(1)+"%" : "0%";
 
-  const grossBonus = salary * multiplier;
-  const totalSetAside = items.reduce((s,i)=>s+i.value, 0);
-  const remaining = cashPayout - totalSetAside;
-  const overBudget = remaining < 0;
-  const pct = n => ((n/cashPayout)*100).toFixed(1)+"%";
-
+  const upd     = (field, val) => onChange({...bonus, [field]: val});
+  const updItem = (id, field, val) => onChange({...bonus, items: items.map(i=>i.id===id?{...i,[field]:field==="value"?parseFloat(val)||0:val}:i)});
+  const removeItem = id => onChange({...bonus, items: items.filter(i=>i.id!==id)});
   const addItem = () => {
     const val = parseFloat(newVal);
     if (!newLabel.trim()||isNaN(val)||val<=0) return;
-    setItems(prev=>[...prev,{id:Date.now(),label:newLabel.trim(),category:newCat.trim()||"Other",value:val,color:PALETTE[prev.length%PALETTE.length]}]);
+    onChange({...bonus, items:[...items,{id:Date.now(),label:newLabel.trim(),category:newCat.trim()||"Other",value:val,color:PALETTE[items.length%PALETTE.length]}]});
     setNewLabel(""); setNewCat(""); setNewVal(""); setAdding(false);
   };
 
-  const removeItem = id => setItems(prev=>prev.filter(i=>i.id!==id));
-  const updateField = (id,field,val) => setItems(prev=>prev.map(i=>i.id===id?{...i,[field]:field==="value"?(parseFloat(val)||0):val}:i));
+  const fieldStyle = {background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:15,padding:"10px 12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%"};
 
   return (
-    <div style={{padding:"16px 16px 8px"}}>
-      {/* Summary cards */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderTop:`3px solid ${MUTED}`,borderRadius:10,padding:"14px"}}>
-          <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>Gross Bonus</div>
-          <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:14,color:TEXT}}>{fmt(grossBonus)}</div>
-          <div style={{fontSize:10,color:MUTED,marginTop:3}}>{salary.toLocaleString()} × {multiplier}</div>
+    <div>
+      {/* Header card */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderTop:`3px solid ${YELLOW}`,borderRadius:12,padding:"14px 16px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:3}}>Cash Received</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,color:YELLOW}}>{fmt(cashReceived)}</div>
+          <div style={{fontSize:11,color:MUTED,marginTop:2}}>{month} payout</div>
         </div>
-        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderTop:`3px solid ${YELLOW}`,borderRadius:10,padding:"14px"}}>
-          <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>Cash Received</div>
-          <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:14,color:YELLOW}}>{fmt(cashPayout)}</div>
-          <div style={{fontSize:10,color:MUTED,marginTop:3}}>April payout</div>
-        </div>
+        <button onClick={()=>setEditingParams(p=>!p)} style={{background:editingParams?`${YELLOW}18`:BORDER,border:`1px solid ${editingParams?YELLOW:BORDER}`,borderRadius:8,padding:"8px 12px",color:editingParams?YELLOW:MUTED,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+          ✎ Edit
+        </button>
       </div>
 
-      {/* Big remainder card */}
-      <div style={{background:overBudget?"#1F0D10":"#0D1F18",border:`1px solid ${overBudget?RED:GREEN}44`,borderRadius:12,padding:"16px",marginBottom:16,textAlign:"center"}}>
-        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Available for Investment</div>
-        <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:30,color:overBudget?RED:GREEN}}>{fmt(remaining)}</div>
-        {overBudget&&<div style={{fontSize:12,color:RED,marginTop:4}}>⚠ Set-asides exceed cash received</div>}
-      </div>
-
-      {/* Edit bonus toggle */}
-      <button onClick={()=>setEditingBonus(b=>!b)} style={{width:"100%",background:editingBonus?`${YELLOW}15`:CARD,border:`1px solid ${editingBonus?YELLOW:BORDER}`,borderRadius:editingBonus?"10px 10px 0 0":10,padding:"12px 16px",color:editingBonus?YELLOW:MUTED,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:editingBonus?0:12}}>
-        <span>✎ Edit Bonus Parameters</span>
-        <span>{editingBonus?"▲":"▼"}</span>
-      </button>
-
-      {editingBonus && (
-        <div style={{background:CARD,border:`1px solid ${YELLOW}44`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:"16px",marginBottom:12}}>
+      {/* Edit parameters */}
+      {editingParams&&(
+        <div style={{background:CARD,border:`1px solid ${YELLOW}44`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
           {[
-            {label:"Monthly Salary (SGD)",value:salary,setter:setSalary,step:100},
-            {label:"Bonus Multiplier (months)",value:multiplier,setter:setMultiplier,step:0.1},
-            {label:"Cash Received (SGD)",value:cashPayout,setter:setCashPayout,step:100},
-          ].map(({label,value,setter,step})=>(
-            <div key={label} style={{marginBottom:12}}>
-              <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>{label}</div>
-              <input type="number" value={value} step={step} onChange={e=>setter(parseFloat(e.target.value)||0)} style={inp({fontFamily:"'DM Mono',monospace"})} />
+            {label:"Bonus name",          field:"name",         type:"text",   value:name},
+            {label:"Month received",      field:"month",        type:"text",   value:month},
+            {label:"Cash received (SGD)", field:"cashReceived", type:"number", value:cashReceived},
+          ].map(({label,field,type,value})=>(
+            <div key={field} style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>{label}</div>
+              <input type={type} value={value} onChange={e=>upd(field, type==="number"?(parseFloat(e.target.value)||0):e.target.value)}
+                style={{...fieldStyle,fontFamily:type==="number"?"'DM Mono',monospace":"inherit"}} />
             </div>
           ))}
+          <button onClick={()=>setEditingParams(false)} style={{width:"100%",padding:"10px",borderRadius:8,border:`1px solid ${GREEN}`,background:`${GREEN}18`,color:GREEN,fontWeight:700,fontSize:13,cursor:"pointer"}}>Done</button>
         </div>
       )}
 
-      {/* Set-asides list */}
+      {/* Available for investment */}
+      <div style={{background:over?"#1F0D10":"#0D1F18",border:`1px solid ${over?RED:GREEN}44`,borderRadius:12,padding:"14px 16px",marginBottom:12,textAlign:"center"}}>
+        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Available for Investment</div>
+        <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,color:over?RED:GREEN}}>{fmt(remaining)}</div>
+        {over&&<div style={{fontSize:12,color:RED,marginTop:4}}>⚠ Set-asides exceed cash received</div>}
+      </div>
+
+      {/* Set-asides */}
       <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:12}}>
-        <div style={{padding:"11px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
-          <span>Set-asides</span><span>Amount · % · Running Total</span>
+        <div style={{padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
+          <span>Set-asides</span><span>Amount · % · Remaining</span>
         </div>
-        <div style={{padding:"12px 16px",borderBottom:`2px solid ${BORDER}`,background:"#1A2035"}}>
+        <div style={{padding:"11px 16px",borderBottom:`2px solid ${BORDER}`,background:"#1A2035"}}>
           <div style={{fontWeight:600,fontSize:13}}>Cash Received</div>
-          <div style={{fontFamily:"'DM Mono',monospace",color:YELLOW,fontWeight:700,fontSize:15,marginTop:2}}>{fmt(cashPayout)}</div>
+          <div style={{fontFamily:"'DM Mono',monospace",color:YELLOW,fontWeight:700,fontSize:14,marginTop:2}}>{fmt(cashReceived)}</div>
         </div>
 
         {items.map((item,i)=>{
-          const runningTotal = cashPayout - items.slice(0,i+1).reduce((s,x)=>s+x.value,0);
+          const runningTotal = cashReceived - items.slice(0,i+1).reduce((s,x)=>s+x.value,0);
           const isEditing = editingId===item.id;
           return (
             <div key={item.id} style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,background:isEditing?"#131C2A":"transparent"}}>
-              {isEditing ? (
+              {isEditing?(
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  <input value={item.label} onChange={e=>updateField(item.id,"label",e.target.value)} style={inp({fontSize:14})} placeholder="Item name" />
-                  <input value={item.category} onChange={e=>updateField(item.id,"category",e.target.value)} style={inp({fontSize:13})} placeholder="Category" />
-                  <input type="number" value={item.value} onChange={e=>updateField(item.id,"value",e.target.value)} style={inp({fontFamily:"'DM Mono',monospace"})} placeholder="Amount" />
+                  <input value={item.label} onChange={e=>updItem(item.id,"label",e.target.value)} style={fieldStyle} placeholder="Item name" />
+                  <input value={item.category} onChange={e=>updItem(item.id,"category",e.target.value)} style={fieldStyle} placeholder="Category" />
+                  <input type="number" value={item.value} onChange={e=>updItem(item.id,"value",e.target.value)} style={{...fieldStyle,fontFamily:"'DM Mono',monospace"}} />
                   <button onClick={()=>setEditingId(null)} style={{padding:"10px",borderRadius:8,border:`1px solid ${GREEN}`,background:`${GREEN}20`,color:GREEN,fontWeight:700,fontSize:13,cursor:"pointer"}}>Done</button>
                 </div>
-              ) : (
+              ):(
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <div style={{width:3,height:38,borderRadius:2,background:item.color,flexShrink:0}}/>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontWeight:500,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.label}</div>
                     <div style={{fontSize:11,color:MUTED}}>{item.category}</div>
-                    <div style={{display:"flex",gap:8,marginTop:3,flexWrap:"wrap"}}>
-                      <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontSize:13,fontWeight:600}}>−{fmt(item.value).replace("SGD ","")}</span>
-                      <span style={{color:MUTED,fontSize:12}}>{pct(item.value)}</span>
-                      <span style={{fontFamily:"'DM Mono',monospace",color:runningTotal<0?RED:MUTED,fontSize:12}}>→ {fmt(runningTotal)}</span>
+                    <div style={{display:"flex",gap:8,marginTop:2,flexWrap:"wrap"}}>
+                      <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontSize:12,fontWeight:600}}>−{fmt(item.value).replace("SGD ","")}</span>
+                      <span style={{color:MUTED,fontSize:11}}>{pct(item.value)}</span>
+                      <span style={{fontFamily:"'DM Mono',monospace",color:runningTotal<0?RED:MUTED,fontSize:11}}>→ {fmt(runningTotal)}</span>
                     </div>
                   </div>
                   <div style={{display:"flex",gap:6,flexShrink:0}}>
@@ -442,37 +434,37 @@ function BonusAllocation() {
           );
         })}
 
-        <div style={{padding:"12px 16px",borderBottom:`2px solid ${BORDER}`,background:"#16111A",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{padding:"11px 16px",borderBottom:`2px solid ${BORDER}`,background:"#16111A",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={{fontSize:12,color:MUTED,fontStyle:"italic"}}>Total set-asides</span>
-          <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontWeight:700,fontSize:14}}>−{fmt(totalSetAside).replace("SGD ","")}</span>
+          <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontWeight:700,fontSize:13}}>−{fmt(totalSetAside).replace("SGD ","")}</span>
         </div>
 
-        {adding ? (
+        {adding?(
           <div style={{padding:"14px 16px"}}>
             <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:12}}>
-              <input placeholder="Item name *" value={newLabel} onChange={e=>setNewLabel(e.target.value)} style={inp()} autoFocus />
-              <input placeholder="Category" value={newCat} onChange={e=>setNewCat(e.target.value)} style={inp()} />
-              <input type="number" placeholder="Amount (SGD) *" value={newVal} onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addItem()} style={inp({fontFamily:"'DM Mono',monospace"})} />
+              <input placeholder="Item name *" value={newLabel} onChange={e=>setNewLabel(e.target.value)} style={fieldStyle} autoFocus />
+              <input placeholder="Category" value={newCat} onChange={e=>setNewCat(e.target.value)} style={fieldStyle} />
+              <input type="number" placeholder="Amount (SGD) *" value={newVal} onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addItem()} style={{...fieldStyle,fontFamily:"'DM Mono',monospace"}} />
             </div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={addItem} style={{flex:1,padding:"12px",borderRadius:8,border:"none",background:GREEN,color:"#0F1117",fontWeight:700,fontSize:14,cursor:"pointer"}}>Add</button>
               <button onClick={()=>{setAdding(false);setNewLabel("");setNewCat("");setNewVal("");}} style={{padding:"12px 16px",borderRadius:8,border:`1px solid ${BORDER}`,background:"none",color:MUTED,fontSize:14,cursor:"pointer"}}>Cancel</button>
             </div>
           </div>
-        ) : (
-          <button onClick={()=>setAdding(true)} style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:MUTED,fontSize:13,cursor:"pointer",textAlign:"left"}}>+ Add set-aside</button>
+        ):(
+          <button onClick={()=>setAdding(true)} style={{width:"100%",background:"none",border:"none",padding:"12px 16px",color:MUTED,fontSize:13,cursor:"pointer",textAlign:"left"}}>+ Add set-aside</button>
         )}
       </div>
 
-      {/* Progress bar */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+      {/* Breakdown bar */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:"13px 16px",marginBottom:8}}>
         <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Breakdown</div>
         <div style={{height:12,borderRadius:6,overflow:"hidden",display:"flex",background:BORDER}}>
           {[...items,{label:"Investment",value:Math.max(remaining,0),color:GREEN}].map(item=>(
-            <div key={item.label} style={{width:`${Math.max((item.value/cashPayout)*100,0)}%`,background:item.color,height:"100%",transition:"width 0.3s ease"}}/>
+            <div key={item.label} style={{width:`${Math.max(cashReceived>0?(item.value/cashReceived)*100:0,0)}%`,background:item.color,height:"100%",transition:"width 0.3s ease"}}/>
           ))}
         </div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginTop:10}}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:"5px 14px",marginTop:9}}>
           {[...items,{label:"Investment",value:Math.max(remaining,0),color:GREEN}].map(item=>(
             <div key={item.label} style={{display:"flex",alignItems:"center",gap:5,fontSize:11}}>
               <div style={{width:7,height:7,borderRadius:"50%",background:item.color}}/>
@@ -482,10 +474,212 @@ function BonusAllocation() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
 
-      <div style={{fontSize:11,color:MUTED,textAlign:"center",paddingBottom:8}}>
-        Gross: {fmt(grossBonus)} · Remaining unpaid: {fmt(grossBonus-cashPayout)}
+function YearSummary({bonuses}) {
+  const totalCash     = bonuses.reduce((s,b)=>s+b.cashReceived, 0);
+  const totalSetAside = bonuses.reduce((s,b)=>s+b.items.reduce((x,i)=>x+i.value,0), 0);
+  const totalInvest   = Math.max(totalCash - totalSetAside, 0);
+
+  // Aggregate set-aside items by category across all bonuses
+  const catMap = {};
+  bonuses.forEach(b => b.items.forEach(item => {
+    const key = item.category||"Other";
+    if (!catMap[key]) catMap[key] = {total:0, color:item.color};
+    catMap[key].total += item.value;
+  }));
+  const cats = Object.entries(catMap).sort((a,b)=>b[1].total-a[1].total);
+
+  // SVG donut chart
+  const DonutChart = () => {
+    if (totalCash <= 0) return null;
+    const cx=100, cy=100, r=72, stroke=28;
+    const circumference = 2 * Math.PI * r;
+    const segments = [
+      ...cats.map(([label,{total,color}])=>({label, value:total, color})),
+      {label:"Investment", value:totalInvest, color:GREEN},
+    ].filter(s=>s.value>0);
+    let offset = 0;
+    const gap = 1.5; // degrees gap between segments
+    return (
+      <svg viewBox="0 0 200 200" style={{width:180,height:180,display:"block",margin:"0 auto"}}>
+        {segments.map((seg,i)=>{
+          const pct = seg.value / totalCash;
+          const dashLen = Math.max((pct * circumference) - (gap/360*circumference), 0);
+          const dashOffset = -offset * circumference;
+          offset += pct;
+          return (
+            <circle key={i} cx={cx} cy={cy} r={r}
+              fill="none" stroke={seg.color} strokeWidth={stroke}
+              strokeDasharray={`${dashLen} ${circumference - dashLen}`}
+              strokeDashoffset={dashOffset}
+              style={{transform:"rotate(-90deg)",transformOrigin:"100px 100px",transition:"stroke-dasharray 0.5s ease"}}
+            />
+          );
+        })}
+        {/* Centre text */}
+        <text x={cx} y={cy-8} textAnchor="middle" fill="#7A8099" fontSize="10" fontFamily="DM Sans">Total Cash</text>
+        <text x={cx} y={cy+8} textAnchor="middle" fill="#E8EAF0" fontSize="13" fontWeight="700" fontFamily="DM Mono">{fmt(totalCash).replace("SGD ","")}</text>
+        <text x={cx} y={cy+22} textAnchor="middle" fill="#5BC8A0" fontSize="10" fontFamily="DM Sans">SGD</text>
+      </svg>
+    );
+  };
+
+  return (
+    <div>
+      {/* Donut chart card */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px",marginBottom:12}}>
+        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:14}}>2026 Bonus Overview</div>
+        <DonutChart />
+
+        {/* Legend */}
+        <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
+          {[...cats.map(([label,{total,color}])=>({label,value:total,color})),
+            {label:"Available to Invest",value:totalInvest,color:GREEN}
+          ].map(({label,value,color})=>(
+            <div key={label} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <div style={{width:10,height:10,borderRadius:"50%",background:color,flexShrink:0}}/>
+                <span style={{fontSize:13,color:MUTED}}>{label}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:11,color:MUTED}}>{totalCash>0?((value/totalCash)*100).toFixed(0):0}%</span>
+                <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:600,color:TEXT}}>{fmt(value)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Totals footer */}
+        <div style={{borderTop:`1px solid ${BORDER}`,marginTop:12,paddingTop:12,display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontSize:12,color:MUTED}}>Total Cash Received</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:YELLOW}}>{fmt(totalCash)}</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontSize:12,color:MUTED}}>Total Set-asides</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:RED}}>−{fmt(totalSetAside).replace("SGD ","")}</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontSize:12,color:GREEN,fontWeight:600}}>Available to Invest</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,color:GREEN}}>{fmt(totalInvest)}</span>
+          </div>
+        </div>
       </div>
+
+      {/* Combined set-asides by category */}
+      {cats.length>0&&(
+        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:8}}>
+          <div style={{padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em"}}>
+            Combined Set-asides by Category
+          </div>
+          {cats.map(([cat,{total,color}],i)=>{
+            const barPct = totalCash>0?(total/totalCash)*100:0;
+            return (
+              <div key={cat} style={{padding:"12px 16px",borderBottom:i<cats.length-1?`1px solid ${BORDER}`:"none"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:color}}/>
+                    <span style={{fontSize:13,color:MUTED}}>{cat}</span>
+                  </div>
+                  <div>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:600,color:TEXT}}>{fmt(total)}</span>
+                    <span style={{fontSize:11,color:MUTED,marginLeft:6}}>{barPct.toFixed(0)}%</span>
+                  </div>
+                </div>
+                <div style={{height:4,borderRadius:2,background:BORDER,overflow:"hidden"}}>
+                  <div style={{width:`${barPct}%`,height:"100%",background:color,borderRadius:2,transition:"width 0.4s ease"}}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BonusAllocation() {
+  const [bonuses, setBonuses] = useState(() => {
+    try { const s=localStorage.getItem("bonus-allocation-v2"); return s?JSON.parse(s):DEFAULT_BONUSES; } catch { return DEFAULT_BONUSES; }
+  });
+  const [activeId, setActiveId] = useState("summary");
+  const [addingBonus, setAddingBonus] = useState(false);
+  const [newBonusName, setNewBonusName] = useState("");
+  const [newBonusMonth, setNewBonusMonth] = useState("");
+
+  useEffect(()=>{ try { localStorage.setItem("bonus-allocation-v2", JSON.stringify(bonuses)); } catch {} }, [bonuses]);
+
+  const updateBonus = (updated) => setBonuses(prev=>prev.map(b=>b.id===updated.id?updated:b));
+  const deleteBonus = (id) => { setBonuses(prev=>prev.filter(b=>b.id!==id)); setActiveId("summary"); };
+  const createBonus = () => {
+    if (!newBonusName.trim()) return;
+    const nb = {id:Date.now(),name:newBonusName.trim(),month:newBonusMonth.trim()||"2026",grossBonus:0,cashReceived:0,salary:0,multiplier:0,items:[]};
+    setBonuses(prev=>[...prev,nb]);
+    setActiveId(nb.id);
+    setAddingBonus(false); setNewBonusName(""); setNewBonusMonth("");
+  };
+
+  const tabs = [{id:"summary",label:"📊 Year",color:BLUE}, ...bonuses.map(b=>({id:b.id,label:b.name,color:YELLOW}))];
+  const activeBonus = bonuses.find(b=>b.id===activeId);
+
+  const fieldStyle = {background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:15,padding:"10px 12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%"};
+
+  return (
+    <div style={{padding:"16px 16px 8px"}}>
+
+      {/* Horizontal scroll tabs */}
+      <div style={{display:"flex",gap:8,marginBottom:14,overflowX:"auto",paddingBottom:4,WebkitOverflowScrolling:"touch"}}>
+        {tabs.map(t=>(
+          <button key={t.id} onClick={()=>setActiveId(t.id)} style={{
+            flexShrink:0,padding:"8px 14px",borderRadius:20,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12,whiteSpace:"nowrap",
+            border:`1px solid ${activeId===t.id?t.color:BORDER}`,
+            background:activeId===t.id?`${t.color}18`:"none",
+            color:activeId===t.id?t.color:MUTED,
+          }}>{t.label}</button>
+        ))}
+        <button onClick={()=>setAddingBonus(p=>!p)} style={{
+          flexShrink:0,padding:"8px 14px",borderRadius:20,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12,
+          border:`1px solid ${addingBonus?GREEN:BORDER}`,background:addingBonus?`${GREEN}18`:"none",color:addingBonus?GREEN:MUTED,
+        }}>+ Add</button>
+      </div>
+
+      {/* Add bonus form */}
+      {addingBonus&&(
+        <div style={{background:CARD,border:`1px solid ${GREEN}44`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+          <div style={{fontSize:13,fontWeight:600,color:GREEN,marginBottom:12}}>New Bonus</div>
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Bonus name *</div>
+            <input placeholder="e.g. RSU Vest, Mid-year Bonus" value={newBonusName} onChange={e=>setNewBonusName(e.target.value)} style={fieldStyle} autoFocus />
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Month received</div>
+            <input placeholder="e.g. October" value={newBonusMonth} onChange={e=>setNewBonusMonth(e.target.value)} style={fieldStyle} />
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={createBonus} style={{flex:1,padding:"11px",borderRadius:8,border:"none",background:GREEN,color:"#0F1117",fontWeight:700,fontSize:14,cursor:"pointer"}}>Create</button>
+            <button onClick={()=>{setAddingBonus(false);setNewBonusName("");setNewBonusMonth("");}} style={{padding:"11px 16px",borderRadius:8,border:`1px solid ${BORDER}`,background:"none",color:MUTED,fontSize:14,cursor:"pointer"}}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Summary view */}
+      {activeId==="summary" && <YearSummary bonuses={bonuses} />}
+
+      {/* Individual bonus view */}
+      {activeBonus && (
+        <>
+          <BonusDetail bonus={activeBonus} onChange={updateBonus} />
+          {bonuses.length>1&&(
+            <button onClick={()=>{if(window.confirm(`Delete "${activeBonus.name}"? This cannot be undone.`))deleteBonus(activeBonus.id);}}
+              style={{width:"100%",background:"none",border:`1px solid ${RED}44`,borderRadius:8,padding:"10px",color:RED,fontSize:12,cursor:"pointer",fontFamily:"inherit",marginTop:4,marginBottom:8}}>
+              🗑 Delete {activeBonus.name}
+            </button>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -781,8 +975,10 @@ function BackupRestore() {
       version: "1.0.4",
       exported: new Date().toISOString(),
       "monthly-tracker":    localStorage.getItem("monthly-tracker"),
+      "budget-overrides":   localStorage.getItem("budget-overrides"),
       "sf-funds":           localStorage.getItem("sf-funds"),
       "bonus-allocation":   localStorage.getItem("bonus-allocation"),
+      "bonus-allocation-v2":localStorage.getItem("bonus-allocation-v2"),
     };
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], {type:"application/json"});
@@ -803,9 +999,11 @@ function BackupRestore() {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
-        if (data["monthly-tracker"])  localStorage.setItem("monthly-tracker",  data["monthly-tracker"]);
-        if (data["sf-funds"])         localStorage.setItem("sf-funds",         data["sf-funds"]);
-        if (data["bonus-allocation"]) localStorage.setItem("bonus-allocation", data["bonus-allocation"]);
+        if (data["monthly-tracker"])     localStorage.setItem("monthly-tracker",     data["monthly-tracker"]);
+        if (data["budget-overrides"])    localStorage.setItem("budget-overrides",    data["budget-overrides"]);
+        if (data["sf-funds"])            localStorage.setItem("sf-funds",            data["sf-funds"]);
+        if (data["bonus-allocation"])    localStorage.setItem("bonus-allocation",    data["bonus-allocation"]);
+        if (data["bonus-allocation-v2"]) localStorage.setItem("bonus-allocation-v2",data["bonus-allocation-v2"]);
         setImported(true);
         setTimeout(() => window.location.reload(), 1200);
       } catch {
@@ -923,7 +1121,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.1";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
