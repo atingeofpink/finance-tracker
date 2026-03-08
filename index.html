@@ -494,16 +494,21 @@ function BonusAllocation() {
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-const FLEX_CATS = (monthIdx) => [
-  {id:"food",     label:"Food & Dining",                              icon:"🍜", budget: monthIdx<=3 ? 856.72 : 800.72},
-  {id:"beauty",   label:"Beauty",                                     icon:"💅", budget: 200},
-  {id:"shopping", label:"Shopping",                                   icon:"🛍️", budget: 300},
-  {id:"home_ent", label:"Home / Entertainment /\nSport / Personal & Gifts", icon:"🎮", budget: 779},
+const FLEX_CATS = [
+  {id:"food",     label:"Food & Dining",                         icon:"🍜"},
+  {id:"beauty",   label:"Beauty",                                icon:"💅"},
+  {id:"shopping", label:"Shopping",                              icon:"🛍️"},
+  {id:"home_ent", label:"Home, Entertainment, Sports, Personal", icon:"🎮"},
+  {id:"cab",      label:"Cab",                                   icon:"🚕"},
+  {id:"gifts",    label:"Gifts",                                 icon:"🎁"},
 ];
+
+// Base flexible spending budget per period (excl. extra income)
+const BASE_FLEX_BUDGET = (monthIdx) => monthIdx <= 3 ? 2135.72 : 2079.72;
 
 const initMonthData = () => {
   const d = {};
-  for (let m=0; m<12; m++) d[m] = {food:"", beauty:"", shopping:"", home_ent:""};
+  for (let m=0; m<12; m++) d[m] = {food:"", beauty:"", shopping:"", home_ent:"", cab:"", gifts:"", extra_income:""};
   return d;
 };
 
@@ -515,15 +520,16 @@ function MonthlyTracker() {
 
   useEffect(() => { try { localStorage.setItem("monthly-tracker", JSON.stringify(allData)); } catch {} }, [allData]);
 
-  const cats = FLEX_CATS(monthIdx);
-  const data = allData[monthIdx] || {food:"",beauty:"",shopping:"",home_ent:""};
-
+  const data = allData[monthIdx] || initMonthData()[monthIdx];
   const setVal = (id, val) => setAllData(prev => ({...prev, [monthIdx]: {...(prev[monthIdx]||{}), [id]: val}}));
 
-  const totalBudget = cats.reduce((s,c)=>s+c.budget, 0);
-  const totalSpent  = cats.reduce((s,c)=>s+(parseFloat(data[c.id])||0), 0);
-  const totalLeft   = totalBudget - totalSpent;
-  const anyEntered  = cats.some(c => parseFloat(data[c.id]) > 0);
+  const extraIncome   = parseFloat(data.extra_income) || 0;
+  const baseBudget    = BASE_FLEX_BUDGET(monthIdx);
+  const totalBudget   = baseBudget + extraIncome;
+  const totalSpent    = FLEX_CATS.reduce((s,c) => s + (parseFloat(data[c.id])||0), 0);
+  const totalLeft     = totalBudget - totalSpent;
+  const anyEntered    = FLEX_CATS.some(c => parseFloat(data[c.id]) > 0);
+  const pctUsed       = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
 
   return (
     <div style={{padding:"16px 16px 8px"}}>
@@ -538,105 +544,117 @@ function MonthlyTracker() {
         <button onClick={()=>setMonthIdx(m=>Math.min(11,m+1))} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:38,height:38,color:TEXT,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
       </div>
 
-      {/* Summary bar — total spent vs budget */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px",marginBottom:16}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:10}}>
+      {/* Summary card */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px",marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:12}}>
           <div>
             <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Flexible Spending</div>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:26,fontWeight:700,color:totalSpent>totalBudget?RED:TEXT}}>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:28,fontWeight:700,color:totalSpent>totalBudget?RED:TEXT}}>
               {fmt(totalSpent)}
             </div>
-            <div style={{fontSize:12,color:MUTED,marginTop:2}}>of {fmt(totalBudget)} budget</div>
+            <div style={{fontSize:12,color:MUTED,marginTop:3}}>
+              of <span style={{color:extraIncome>0?GREEN:TEXT,fontFamily:"'DM Mono',monospace"}}>{fmt(totalBudget)}</span> budget
+              {extraIncome>0 && <span style={{color:GREEN,fontSize:11}}> (+{fmt(extraIncome).replace("SGD ","")} extra)</span>}
+            </div>
           </div>
           <div style={{textAlign:"right"}}>
             <div style={{fontSize:11,color:MUTED,marginBottom:3}}>Remaining</div>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:18,fontWeight:700,color:totalLeft>=0?GREEN:RED}}>
-              {totalLeft>=0?fmt(totalLeft):`−${fmt(Math.abs(totalLeft))}`}
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:20,fontWeight:700,color:totalLeft>=0?GREEN:RED}}>
+              {totalLeft>=0 ? fmt(totalLeft) : `−${fmt(Math.abs(totalLeft))}`}
             </div>
           </div>
         </div>
+
         {/* Overall progress bar */}
         <div style={{height:8,borderRadius:4,background:BORDER,overflow:"hidden"}}>
           <div style={{
-            width:`${Math.min((totalSpent/totalBudget)*100,100)}%`,
-            height:"100%",
-            background: totalSpent>totalBudget ? RED : totalSpent/totalBudget>0.85 ? ORANGE : GREEN,
-            borderRadius:4, transition:"width 0.4s ease"
+            width:`${pctUsed}%`, height:"100%", borderRadius:4, transition:"width 0.4s ease",
+            background: totalSpent>totalBudget ? RED : pctUsed>85 ? ORANGE : GREEN,
           }}/>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:MUTED}}>
           <span>SGD 0</span>
-          <span>{Math.round((totalSpent/totalBudget)*100)||0}% used</span>
+          <span>{Math.round(pctUsed)||0}% used</span>
           <span>{fmt(totalBudget)}</span>
         </div>
       </div>
 
-      {/* Category cards */}
-      <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
-        {cats.map(cat => {
+      {/* Extra income input */}
+      <div style={{background:CARD,border:`1px solid ${extraIncome>0?GREEN+"66":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3}}>
+              <span style={{fontSize:16}}>🎉</span>
+              <span style={{fontSize:13,fontWeight:600}}>Extra Income</span>
+            </div>
+            <div style={{fontSize:11,color:MUTED}}>Windfalls, bonuses, side income — automatically added to your budget</div>
+          </div>
+          <input
+            type="number" inputMode="decimal" placeholder="0.00"
+            value={data.extra_income}
+            onChange={e=>setVal("extra_income", e.target.value)}
+            style={{
+              background:"#0A0D14", border:`1px solid ${extraIncome>0?GREEN:BORDER}`,
+              borderRadius:8, color:extraIncome>0?GREEN:TEXT, fontSize:16,
+              fontFamily:"'DM Mono',monospace", padding:"9px 12px",
+              width:120, textAlign:"right", outline:"none", flexShrink:0, marginLeft:12,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Category rows */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:12}}>
+        <div style={{padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
+          <span>Category</span><span>Spent</span>
+        </div>
+        {FLEX_CATS.map((cat, i) => {
           const spent = parseFloat(data[cat.id]) || 0;
-          const left  = cat.budget - spent;
-          const over  = spent > cat.budget;
-          const pct   = cat.budget > 0 ? Math.min((spent/cat.budget)*100,100) : 0;
-          const barColor = over ? RED : pct > 85 ? ORANGE : YELLOW;
-
+          const sharePct = totalSpent > 0 ? ((spent/totalSpent)*100).toFixed(0) : 0;
           return (
-            <div key={cat.id} style={{background:CARD,border:`1px solid ${over?RED+"66":BORDER}`,borderRadius:12,padding:"14px 16px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3}}>
-                    <span style={{fontSize:16}}>{cat.icon}</span>
-                    <span style={{fontSize:13,fontWeight:600,lineHeight:1.3}}>{cat.label}</span>
-                  </div>
-                  <div style={{fontSize:11,color:MUTED}}>Budget: <span style={{fontFamily:"'DM Mono',monospace",color:TEXT}}>{fmt(cat.budget)}</span></div>
+            <div key={cat.id} style={{padding:"12px 16px",borderBottom:i<FLEX_CATS.length-1?`1px solid ${BORDER}`:"none",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:16,flexShrink:0}}>{cat.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:500,marginBottom:4}}>{cat.label}</div>
+                {/* Share bar — shows what % of total spending this category is */}
+                <div style={{height:4,borderRadius:2,background:BORDER,overflow:"hidden"}}>
+                  <div style={{width:`${sharePct}%`,height:"100%",background:YELLOW,borderRadius:2,transition:"width 0.3s ease"}}/>
                 </div>
-                {/* Input */}
-                <div style={{flexShrink:0,marginLeft:12}}>
-                  <input
-                    type="number" inputMode="decimal" placeholder="0.00"
-                    value={data[cat.id]}
-                    onChange={e=>setVal(cat.id, e.target.value)}
-                    style={{
-                      background:"#0A0D14", border:`1px solid ${over?RED:BORDER}`,
-                      borderRadius:8, color:over?RED:TEXT, fontSize:16,
-                      fontFamily:"'DM Mono',monospace", padding:"9px 12px",
-                      width:120, textAlign:"right", outline:"none",
-                    }}
-                  />
-                </div>
+                {spent>0 && <div style={{fontSize:10,color:MUTED,marginTop:3}}>{sharePct}% of total spending</div>}
               </div>
-
-              {/* Progress bar */}
-              <div style={{height:6,borderRadius:3,background:BORDER,overflow:"hidden",marginBottom:6}}>
-                <div style={{width:`${pct}%`,height:"100%",background:barColor,borderRadius:3,transition:"width 0.3s ease"}}/>
-              </div>
-
-              {/* Left / over label */}
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{fontSize:11,color:MUTED}}>{Math.round(pct)}% used</div>
-                {spent > 0 && (
-                  <div style={{fontSize:11,fontFamily:"'DM Mono',monospace",fontWeight:600,color:over?RED:GREEN}}>
-                    {over ? `⚠ ${fmt(Math.abs(left)).replace("SGD ","")} over` : `${fmt(left).replace("SGD ","")} left`}
-                  </div>
-                )}
-              </div>
+              <input
+                type="number" inputMode="decimal" placeholder="0.00"
+                value={data[cat.id]}
+                onChange={e=>setVal(cat.id, e.target.value)}
+                style={{
+                  background:"#0A0D14", border:`1px solid ${BORDER}`,
+                  borderRadius:8, color:TEXT, fontSize:15,
+                  fontFamily:"'DM Mono',monospace", padding:"8px 10px",
+                  width:110, textAlign:"right", outline:"none", flexShrink:0,
+                }}
+              />
             </div>
           );
         })}
+        {/* Total row */}
+        <div style={{padding:"12px 16px",background:"#13161F",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`2px solid ${BORDER}`}}>
+          <span style={{fontSize:13,fontWeight:700}}>Total Spent</span>
+          <span style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:totalSpent>totalBudget?RED:TEXT}}>{fmt(totalSpent)}</span>
+        </div>
       </div>
 
-      {/* Monthly snapshot — all buckets */}
+      {/* Full month snapshot */}
       <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8}}>
         <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>Full Month Snapshot</div>
         {[
-          {label:"Rent",              value:1807.28,                         color:PURPLE},
-          {label:"Income Tax",        value:monthIdx<=3?1354:1410,           color:RED,    note:monthIdx<=3?"incl. provision":"net drawdown"},
-          {label:"Insurance",         value:540,                             color:BLUE},
-          {label:"Non-negotiables",   value:520,                             color:GREEN},
-          {label:"Gym",               value:463,                             color:YELLOW},
-          {label:"Flexible Spending", value:totalBudget, actual:anyEntered?totalSpent:null, color:YELLOW},
-          {label:"Travel (set-aside)",value:800,                             color:ORANGE},
-          {label:"Savings & Invest.", value:3600,                            color:GREEN},
+          {label:"Rent",                            value:1807.28,                color:PURPLE},
+          {label:"Income Tax",                      value:monthIdx<=3?1354:1410,  color:RED,   note:monthIdx<=3?"incl. provision":"net drawdown"},
+          {label:"Insurance",                       value:540,                    color:BLUE},
+          {label:"Non-negotiables",                 value:520,                    color:GREEN},
+          {label:"Gym",                             value:463,                    color:YELLOW},
+          {label:"Flexible Spending",               value:totalBudget, actual:anyEntered?totalSpent:null, color:YELLOW},
+          {label:"Travel (set-aside)",              value:800,                    color:ORANGE},
+          {label:"Savings & Invest.",               value:3600,                   color:GREEN},
         ].map(({label,value,actual,color,note})=>(
           <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
             <div style={{display:"flex",alignItems:"center",gap:7,flex:1,minWidth:0}}>
@@ -658,9 +676,18 @@ function MonthlyTracker() {
             </div>
           </div>
         ))}
+        {extraIncome > 0 && (
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+            <div style={{display:"flex",alignItems:"center",gap:7}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:GREEN,flexShrink:0}}/>
+              <span style={{fontSize:12,color:GREEN}}>🎉 Extra Income</span>
+            </div>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:GREEN}}>+{fmt(extraIncome)}</span>
+          </div>
+        )}
         <div style={{borderTop:`1px solid ${BORDER}`,marginTop:6,paddingTop:10,display:"flex",justifyContent:"space-between"}}>
           <span style={{fontSize:13,fontWeight:700}}>Total Budget</span>
-          <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:YELLOW}}>{fmt(monthIdx<=3?11420:11420)}</span>
+          <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:YELLOW}}>{fmt(11420 + extraIncome)}</span>
         </div>
       </div>
 
@@ -710,6 +737,79 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+<script>
+// ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
+// Bump this version number every time the file is updated.
+// The app will detect the change and refresh automatically in the background.
+const APP_VERSION = "1.0.4";
+
+if ('serviceWorker' in navigator) {
+  // Inline the service worker as a blob so we don't need a separate sw.js file
+  const swCode = `
+    const VERSION = "${APP_VERSION}";
+    const CACHE = "finance-tracker-" + VERSION;
+
+    self.addEventListener("install", e => {
+      // Take over immediately without waiting
+      self.skipWaiting();
+    });
+
+    self.addEventListener("activate", e => {
+      // Delete all old caches that don't match current version
+      e.waitUntil(
+        caches.keys().then(keys =>
+          Promise.all(
+            keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+          )
+        ).then(() => self.clients.claim())
+      );
+    });
+
+    self.addEventListener("fetch", e => {
+      // Always go to network first, fall back to cache
+      // This ensures updates are picked up immediately
+      e.respondWith(
+        fetch(e.request)
+          .then(res => {
+            // Cache a copy of the response
+            const clone = res.clone();
+            caches.open(CACHE).then(cache => cache.put(e.request, clone));
+            return res;
+          })
+          .catch(() => caches.match(e.request))
+      );
+    });
+
+    // Tell all open tabs to reload when a new version activates
+    self.addEventListener("message", e => {
+      if (e.data === "skipWaiting") self.skipWaiting();
+    });
+  `;
+
+  const blob = new Blob([swCode], {type: "application/javascript"});
+  const swUrl = URL.createObjectURL(blob);
+
+  navigator.serviceWorker.register(swUrl).then(reg => {
+    // When a new service worker is waiting, reload the page to apply it
+    reg.addEventListener("updatefound", () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener("statechange", () => {
+        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+          // New version available — reload silently to apply update
+          newWorker.postMessage("skipWaiting");
+          window.location.reload();
+        }
+      });
+    });
+
+    // Check for updates every time the app is opened or comes to foreground
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") reg.update();
+    });
+  }).catch(err => console.log("SW registration failed:", err));
+}
 </script>
 </body>
 </html>
