@@ -10,49 +10,101 @@
   <meta name="apple-mobile-web-app-title" content="Finance" />
   <title>Finance Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
       margin: 0;
-      background: #F7F5EB;
-      font-family: 'Outfit', sans-serif;
+      background: #0F1117;
+      font-family: 'Inter', sans-serif;
       color: #202A2D;
-      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
     }
 
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input, button { font-family: inherit; }
 
-    /* Focus ring — accessibility */
-    button:focus-visible, input:focus-visible, label:focus-visible {
-      outline: 2px solid #202A2D;
-      outline-offset: 2px;
-    }
-
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #C2BDA8; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #CBD0B5; border-radius: 4px; }
 
-    /* Heading font */
-    .font-head {
-      font-family: 'Cormorant Garamond', Georgia, serif;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-    .font-head-italic {
-      font-family: 'Cormorant Garamond', Georgia, serif;
-      font-style: italic;
-      font-weight: 400;
-    }
-
+    /* Entry animations */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
+      from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .fade-up { animation: fadeUp 0.5s ease-out both; }
+    .fade-up { animation: fadeUp 0.8s ease-out both; }
+    .fade-up-1 { animation-delay: 0.05s; }
+    .fade-up-2 { animation-delay: 0.12s; }
+    .fade-up-3 { animation-delay: 0.19s; }
+    .fade-up-4 { animation-delay: 0.26s; }
+
+    /* Pill buttons */
+    .btn-pill {
+      border-radius: 999px;
+      padding: 10px 22px;
+      font-weight: 500;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1.5px solid #202A2D;
+      background: #202A2D;
+      color: #F7F5EB;
+      transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+      font-family: inherit;
+    }
+    .btn-pill:hover { background: #CBD0B5; color: #202A2D; border-color: #CBD0B5; }
+
+    .btn-pill-outline {
+      border-radius: 999px;
+      padding: 10px 22px;
+      font-weight: 500;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1.5px solid #CBD0B5;
+      background: transparent;
+      color: #202A2D;
+      transition: background 0.25s ease, color 0.25s ease;
+      font-family: inherit;
+    }
+    .btn-pill-outline:hover { background: #CBD0B5; }
+
+    /* Tab active state */
+    .tab-active {
+      background: #202A2D !important;
+      color: #F7F5EB !important;
+      border-color: #202A2D !important;
+    }
+
+    /* Input fields */
+    .field {
+      background: #F0EDE1;
+      border: 1.5px solid #CBD0B5;
+      border-radius: 12px;
+      color: #202A2D;
+      font-size: 15px;
+      padding: 10px 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .field:focus { border-color: #202A2D; box-shadow: 0 0 0 3px rgba(203,208,181,0.4); }
+    .field-mono { font-family: 'DM Mono', monospace; }
+    .field-right { text-align: right; }
   </style>
 </head>
 <body>
@@ -76,10 +128,13 @@ const LIGHT = {
   GREEN:"#1F5C3E",YELLOW:"#5C4A10",RED:"#7A2020",BLUE:"#1E3F5C",PURPLE:"#3D2E60",ORANGE:"#6B3618",
   PALETTE:["#3D2E60","#1F5C3E","#6B3618","#5C4A10","#1E3F5C","#7A2020","#2A5C40","#1A4A5C","#5C3A18","#2E2048"],
 };
-// theme vars — overwritten by App before any component renders
-let BG,CARD,BORDER,TEXT,MUTED,GREEN,YELLOW,RED,BLUE,PURPLE,ORANGE,SAGE="#CBD0B5",PALETTE;
+let BG=DARK.BG,CARD=DARK.CARD,BORDER=DARK.BORDER,TEXT=DARK.TEXT,MUTED=DARK.MUTED;
+let GREEN=DARK.GREEN,YELLOW=DARK.YELLOW,RED=DARK.RED,BLUE=DARK.BLUE,PURPLE=DARK.PURPLE,ORANGE=DARK.ORANGE;
+let SAGE="#CBD0B5",PALETTE=DARK.PALETTE;
 function applyTheme(t){
-  ({BG,CARD,BORDER,TEXT,MUTED,GREEN,YELLOW,RED,BLUE,PURPLE,ORANGE,PALETTE}=t);
+  BG=t.BG;CARD=t.CARD;BORDER=t.BORDER;TEXT=t.TEXT;MUTED=t.MUTED;
+  GREEN=t.GREEN;YELLOW=t.YELLOW;RED=t.RED;BLUE=t.BLUE;PURPLE=t.PURPLE;ORANGE=t.ORANGE;
+  PALETTE=t.PALETTE;
   document.body.style.background=BG;
   document.body.style.color=TEXT;
 }
@@ -169,8 +224,8 @@ function SinkingFunds() {
     <div style={{padding:"16px 16px 8px"}}>
       {/* Total */}
       <div style={{textAlign:"center",marginBottom:16}}>
-        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.18em",fontWeight:500}}>Total Across All Funds</div>
-        <div style={{fontFamily:"'DM Mono',monospace",fontSize:32,fontWeight:600,color:GREEN,marginTop:2,letterSpacing:"-0.02em"}}>{fmt(totalBalance)}</div>
+        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.1em"}}>Total Across All Funds</div>
+        <div style={{fontSize:28,fontWeight:700,fontFamily:"'DM Mono',monospace",color:GREEN,marginTop:2}}>{fmt(totalBalance)}</div>
       </div>
 
       {/* Fund cards grid */}
@@ -181,10 +236,10 @@ function SinkingFunds() {
           return (
             <div key={f.id} onClick={()=>setActiveId(f.id)} style={{background:isActive?`${f.color}18`:CARD,border:`1px solid ${isActive?f.color:BORDER}`,borderTop:`3px solid ${f.color}`,borderRadius:12,padding:"14px 12px",cursor:"pointer",position:"relative"}}>
               {hasAlert && <div style={{position:"absolute",top:8,right:8,width:7,height:7,borderRadius:"50%",background:RED}}/>}
-              <div style={{fontSize:26,marginBottom:8}}>{f.icon}</div>
-              <div style={{fontSize:14,fontWeight:600,color:TEXT,marginBottom:4,lineHeight:1.2}}>{f.name}</div>
-              <div style={{fontSize:17,fontWeight:600,fontFamily:"'DM Mono',monospace",color:f.color,letterSpacing:"-0.02em"}}>{fmt(funds[f.id].balance)}</div>
-              <div style={{fontSize:12,color:f.color,marginTop:5,fontWeight:500}}>+{fmt(f.monthlyAdd).replace("SGD ","")}/mo</div>
+              <div style={{fontSize:22,marginBottom:6}}>{f.icon}</div>
+              <div style={{fontSize:10,color:MUTED,marginBottom:2}}>{f.name}</div>
+              <div style={{fontSize:15,fontWeight:700,fontFamily:"'DM Mono',monospace",color:f.color}}>{fmt(funds[f.id].balance)}</div>
+              <div style={{fontSize:10,color:f.color,marginTop:4,opacity:0.8}}>+{fmt(f.monthlyAdd).replace("SGD ","")}/mo</div>
             </div>
           );
         })}
@@ -195,8 +250,8 @@ function SinkingFunds() {
         <div style={{padding:"14px 16px",background:`${activeFund.color}0C`,borderBottom:`1px solid ${BORDER}`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
-              <div className="font-head" style={{fontSize:22,fontWeight:600}}>{activeFund.icon} {activeFund.name}</div>
-              <div style={{fontSize:13,color:MUTED,fontFamily:"'DM Mono',monospace",marginTop:4}}>
+              <div style={{fontWeight:700,fontSize:15}}>{activeFund.icon} {activeFund.name}</div>
+              <div style={{fontSize:12,color:MUTED,fontFamily:"'DM Mono',monospace",marginTop:2}}>
                 Balance: <span style={{color:activeFund.color,fontWeight:700}}>{fmt(activeData.balance)}</span>
               </div>
             </div>
@@ -217,7 +272,7 @@ function SinkingFunds() {
             {activeData.txns.map((txn,i)=>{
               const isDeposit=txn.amount>=0, isOpening=txn.type==="opening";
               return (
-                <div key={txn.id} style={{padding:"11px 16px",borderBottom:i<activeData.txns.length-1?`1px solid ${BORDER}`:"none",background:i%2===0?"transparent":"#E4DFD0"}}>
+                <div key={txn.id} style={{padding:"11px 16px",borderBottom:i<activeData.txns.length-1?`1px solid ${BORDER}`:"none",background:i%2===0?"transparent":"#13161F"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:13,color:isOpening?MUTED:TEXT,fontStyle:isOpening?"italic":"normal",marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{txn.note}</div>
@@ -344,7 +399,7 @@ function SinkingFunds() {
               </div>
               {formError && <div style={{fontSize:13,color:RED,padding:"8px 12px",background:`${RED}15`,borderRadius:8}}>{formError}</div>}
             </div>
-            <button onClick={submitTxn} style={{width:"100%",marginTop:20,padding:"16px",borderRadius:12,border:"none",background:modal.type==="deposit"?GREEN:RED,color:"#F7F5EB",fontWeight:700,fontSize:16,cursor:"pointer"}}>
+            <button onClick={submitTxn} style={{width:"100%",marginTop:20,padding:"16px",borderRadius:12,border:"none",background:modal.type==="deposit"?GREEN:RED,color:"#0F1117",fontWeight:700,fontSize:16,cursor:"pointer"}}>
               {modal.type==="deposit"?"Confirm Deposit":"Confirm Withdrawal"}
             </button>
           </div>
@@ -365,10 +420,10 @@ const DEFAULT_BONUSES = [{
   grossBonus: 129087.50,
   cashReceived: 32271.88,
   items: [
-    {id:101,label:"Mom",category:"Family",value:3000,color:"#3D2E60"},
-    {id:102,label:"CPF SA Top-up",category:"Retirement",value:4000,color:"#1F5C3E"},
-    {id:103,label:"Treat loved ones",category:"Personal",value:1000,color:"#6B3618"},
-    {id:104,label:"Korea & Australia trip",category:"Travel",value:5000,color:"#5C4A10"},
+    {id:101,label:"Mom",category:"Family",value:3000,color:"#A78BD4"},
+    {id:102,label:"CPF SA Top-up",category:"Retirement",value:4000,color:"#5BC8A0"},
+    {id:103,label:"Treat loved ones",category:"Personal",value:1000,color:"#F4845F"},
+    {id:104,label:"Korea & Australia trip",category:"Travel",value:5000,color:"#E8C547"},
   ],
 }];
 
@@ -399,7 +454,7 @@ function BonusDetail({bonus, onChange}) {
     setNewLabel(""); setNewCat(""); setNewVal(""); setAdding(false);
   };
 
-  const fs = {background:"#E4DFD0",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:15,padding:"10px 12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%"};
+  const fs = {background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:15,padding:"10px 12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%"};
   const fieldStyle = fs;
 
   return (
@@ -468,7 +523,7 @@ function BonusDetail({bonus, onChange}) {
 
           {/* RSU-specific fields */}
           {isRSU&&(
-            <div style={{background:"#E4DFD0",border:`1px solid ${PURPLE}33`,borderRadius:10,padding:"12px",marginBottom:10}}>
+            <div style={{background:"#13102A",border:`1px solid ${PURPLE}33`,borderRadius:10,padding:"12px",marginBottom:10}}>
               <div style={{fontSize:11,color:PURPLE,fontWeight:600,marginBottom:10}}>📈 RSU Details</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
                 <div>
@@ -485,7 +540,7 @@ function BonusDetail({bonus, onChange}) {
                 </div>
               </div>
               {rsuUnits>0&&rsuPrice>0&&(
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",background:"#E4DFD0",borderRadius:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",background:"#0A0D14",borderRadius:8}}>
                   <span style={{fontSize:12,color:MUTED}}>Gross RSU Value</span>
                   <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,color:PURPLE}}>{fmt(rsuUnits*rsuPrice)}</span>
                 </div>
@@ -514,7 +569,7 @@ function BonusDetail({bonus, onChange}) {
       )}
 
       {/* Available for investment */}
-      <div style={{background:over?"#EDE9DC":"#EDE9DC",border:`1px solid ${over?RED:GREEN}44`,borderRadius:12,padding:"14px 16px",marginBottom:12,textAlign:"center"}}>
+      <div style={{background:over?"#1F0D10":"#0D1F18",border:`1px solid ${over?RED:GREEN}44`,borderRadius:12,padding:"14px 16px",marginBottom:12,textAlign:"center"}}>
         <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Available for Investment</div>
         <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,color:over?RED:GREEN}}>{fmt(remaining)}</div>
         {over&&<div style={{fontSize:12,color:RED,marginTop:4}}>⚠ Set-asides exceed cash received</div>}
@@ -525,7 +580,7 @@ function BonusDetail({bonus, onChange}) {
         <div style={{padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
           <span>Set-asides</span><span>Amount · % · Remaining</span>
         </div>
-        <div style={{padding:"11px 16px",borderBottom:`2px solid ${BORDER}`,background:"#E4DFD0"}}>
+        <div style={{padding:"11px 16px",borderBottom:`2px solid ${BORDER}`,background:"#1A2035"}}>
           <div style={{fontWeight:600,fontSize:13}}>Cash Received</div>
           <div style={{fontFamily:"'DM Mono',monospace",color:YELLOW,fontWeight:700,fontSize:14,marginTop:2}}>{fmt(cashReceived)}</div>
         </div>
@@ -534,7 +589,7 @@ function BonusDetail({bonus, onChange}) {
           const runningTotal = cashReceived - items.slice(0,i+1).reduce((s,x)=>s+x.value,0);
           const isEditing = editingId===item.id;
           return (
-            <div key={item.id} style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,background:isEditing?"#E4DFD0":"transparent"}}>
+            <div key={item.id} style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,background:isEditing?"#131C2A":"transparent"}}>
               {isEditing?(
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   <input value={item.label} onChange={e=>updItem(item.id,"label",e.target.value)} style={fieldStyle} placeholder="Item name" />
@@ -564,7 +619,7 @@ function BonusDetail({bonus, onChange}) {
           );
         })}
 
-        <div style={{padding:"11px 16px",borderBottom:`2px solid ${BORDER}`,background:"#E4DFD0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{padding:"11px 16px",borderBottom:`2px solid ${BORDER}`,background:"#16111A",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={{fontSize:12,color:MUTED,fontStyle:"italic"}}>Total set-asides</span>
           <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontWeight:700,fontSize:13}}>−{fmt(totalSetAside).replace("SGD ","")}</span>
         </div>
@@ -577,7 +632,7 @@ function BonusDetail({bonus, onChange}) {
               <input type="number" placeholder="Amount (SGD) *" value={newVal} onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addItem()} style={{...fieldStyle,fontFamily:"'DM Mono',monospace"}} />
             </div>
             <div style={{display:"flex",gap:8}}>
-              <button onClick={addItem} style={{flex:1,padding:"12px",borderRadius:8,border:"none",background:GREEN,color:"#F7F5EB",fontWeight:700,fontSize:14,cursor:"pointer"}}>Add</button>
+              <button onClick={addItem} style={{flex:1,padding:"12px",borderRadius:8,border:"none",background:GREEN,color:"#0F1117",fontWeight:700,fontSize:14,cursor:"pointer"}}>Add</button>
               <button onClick={()=>{setAdding(false);setNewLabel("");setNewCat("");setNewVal("");}} style={{padding:"12px 16px",borderRadius:8,border:`1px solid ${BORDER}`,background:"none",color:MUTED,fontSize:14,cursor:"pointer"}}>Cancel</button>
             </div>
           </div>
@@ -650,9 +705,9 @@ function YearSummary({bonuses}) {
           );
         })}
         {/* Centre text */}
-        <text x={cx} y={cy-8} textAnchor="middle" fill="#5C6260" fontSize="10" fontFamily="DM Sans">Total Cash</text>
-        <text x={cx} y={cy+8} textAnchor="middle" fill="#202A2D" fontSize="13" fontWeight="700" fontFamily="DM Mono">{fmt(totalCash).replace("SGD ","")}</text>
-        <text x={cx} y={cy+22} textAnchor="middle" fill="#1F5C3E" fontSize="10" fontFamily="DM Sans">SGD</text>
+        <text x={cx} y={cy-8} textAnchor="middle" fill="#7A8099" fontSize="10" fontFamily="DM Sans">Total Cash</text>
+        <text x={cx} y={cy+8} textAnchor="middle" fill="#E8EAF0" fontSize="13" fontWeight="700" fontFamily="DM Mono">{fmt(totalCash).replace("SGD ","")}</text>
+        <text x={cx} y={cy+22} textAnchor="middle" fill="#5BC8A0" fontSize="10" fontFamily="DM Sans">SGD</text>
       </svg>
     );
   };
@@ -772,7 +827,7 @@ function BonusAllocation() {
   const tabs = [{id:"summary",label:"📊 Year",color:BLUE}, ...bonuses.map(b=>({id:b.id,label:b.name,color:b.type==="rsu"?PURPLE:YELLOW}))];
   const activeBonus = bonuses.find(b=>b.id===activeId);
 
-  const fs = {background:"#E4DFD0",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:15,padding:"10px 12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%"};
+  const fs = {background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:15,padding:"10px 12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%"};
   const newGrossRSU = (parseFloat(newRsuUnits)||0) * (parseFloat(newRsuPrice)||0);
 
   return (
@@ -826,7 +881,7 @@ function BonusAllocation() {
 
           {/* RSU fields */}
           {newType==="rsu"&&(
-            <div style={{background:"#E4DFD0",border:`1px solid ${PURPLE}33`,borderRadius:10,padding:"12px",marginBottom:12}}>
+            <div style={{background:"#13102A",border:`1px solid ${PURPLE}33`,borderRadius:10,padding:"12px",marginBottom:12}}>
               <div style={{fontSize:11,color:PURPLE,fontWeight:600,marginBottom:10}}>📈 RSU Details</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
                 <div>
@@ -839,7 +894,7 @@ function BonusAllocation() {
                 </div>
               </div>
               {newGrossRSU>0&&(
-                <div style={{display:"flex",justifyContent:"space-between",padding:"8px 10px",background:"#E4DFD0",borderRadius:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",padding:"8px 10px",background:"#0A0D14",borderRadius:8}}>
                   <span style={{fontSize:12,color:MUTED}}>Gross RSU Value</span>
                   <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,color:PURPLE}}>{fmt(newGrossRSU)}</span>
                 </div>
@@ -860,7 +915,7 @@ function BonusAllocation() {
           </div>
 
           <div style={{display:"flex",gap:8}}>
-            <button onClick={createBonus} style={{flex:1,padding:"11px",borderRadius:8,border:"none",background:GREEN,color:"#F7F5EB",fontWeight:700,fontSize:14,cursor:"pointer"}}>Create</button>
+            <button onClick={createBonus} style={{flex:1,padding:"11px",borderRadius:8,border:"none",background:GREEN,color:"#0F1117",fontWeight:700,fontSize:14,cursor:"pointer"}}>Create</button>
             <button onClick={resetNewForm} style={{padding:"11px 16px",borderRadius:8,border:`1px solid ${BORDER}`,background:"none",color:MUTED,fontSize:14,cursor:"pointer"}}>Cancel</button>
           </div>
         </div>
@@ -923,15 +978,15 @@ const getEffectiveBudget = (overrides, monthIdx) => {
 };
 
 const BUDGET_ROWS = [
-  {id:"income",    label:"Income",            icon:"💵", color:"#1F5C3E", isIncome:true},
-  {id:"extra",     label:"Extra Income",      icon:"🎉", color:"#1F5C3E", isIncome:true, hint:"Windfalls, bonuses, one-offs"},
-  {id:"rent",      label:"Rent",              icon:"🏠", color:"#3D2E60"},
-  {id:"tax",       label:"Income Tax",        icon:"📋", color:"#7A2020"},
-  {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#1E3F5C"},
-  {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#1F5C3E", hint:"Utilities · Parents · Transport · Digital Subs"},
-  {id:"gym",       label:"Gym",               icon:"🏋️", color:"#5C4A10"},
-  {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#6B3618"},
-  {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#1E3F5C"},
+  {id:"income",    label:"Income",            icon:"💵", color:"#5BC8A0", isIncome:true},
+  {id:"extra",     label:"Extra Income",      icon:"🎉", color:"#5BC8A0", isIncome:true, hint:"Windfalls, bonuses, one-offs"},
+  {id:"rent",      label:"Rent",              icon:"🏠", color:"#A78BD4"},
+  {id:"tax",       label:"Income Tax",        icon:"📋", color:"#E8547A"},
+  {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#5B8DB8"},
+  {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#5BC8A0", hint:"Utilities · Parents · Transport · Digital Subs"},
+  {id:"gym",       label:"Gym",               icon:"🏋️", color:"#E8C547"},
+  {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#F4845F"},
+  {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#5B8DB8"},
 ];
 
 const initSpending = () => {
@@ -974,7 +1029,7 @@ function MonthlyTracker() {
 
   const inp = (val, onChange, color) => (
     <input type="number" inputMode="decimal" value={val} onChange={e=>onChange(e.target.value)}
-      style={{background:"#E4DFD0",border:`1px solid ${BORDER}`,borderRadius:8,color:color||"#202A2D",
+      style={{background:"#0A0D14",border:`1px solid #252A3A`,borderRadius:8,color:color||"#E8EAF0",
         fontSize:15,fontFamily:"'DM Mono',monospace",padding:"8px 10px",width:128,textAlign:"right",outline:"none",flexShrink:0}} />
   );
 
@@ -982,17 +1037,17 @@ function MonthlyTracker() {
     <div style={{padding:"16px 16px 8px"}}>
 
       {/* Month selector */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,background:"#EDE9DC",borderRadius:12,padding:"10px 14px",border:"1px solid #C2BDA8"}}>
-        <button onClick={()=>setMonthIdx(m=>Math.max(0,m-1))} style={{background:"none",border:"1px solid #C2BDA8",borderRadius:8,width:38,height:38,color:"#202A2D",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,background:"#181C27",borderRadius:12,padding:"12px 16px",border:"1px solid #252A3A"}}>
+        <button onClick={()=>setMonthIdx(m=>Math.max(0,m-1))} style={{background:"none",border:"1px solid #252A3A",borderRadius:8,width:38,height:38,color:"#E8EAF0",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
         <div style={{textAlign:"center"}}>
-          <div className="font-head" style={{fontSize:32,lineHeight:1}}>{MONTHS[monthIdx]} 2026</div>
+          <div style={{fontWeight:700,fontSize:20}}>{MONTHS[monthIdx]} 2026</div>
           <div style={{marginTop:4,minHeight:18}}>
             {isModified
-              ? <span style={{fontSize:10,color:"#5C4A10",background:"rgba(92,74,16,0.08)",padding:"2px 8px",borderRadius:10}}>✎ Budget edited</span>
-              : <span style={{fontSize:11,color:"#5C6260"}}>Default budget</span>}
+              ? <span style={{fontSize:10,color:"#E8C547",background:"#E8C54718",padding:"2px 8px",borderRadius:10}}>✎ Budget edited</span>
+              : <span style={{fontSize:11,color:"#7A8099"}}>Default budget</span>}
           </div>
         </div>
-        <button onClick={()=>setMonthIdx(m=>Math.min(11,m+1))} style={{background:"none",border:"1px solid #C2BDA8",borderRadius:8,width:38,height:38,color:"#202A2D",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+        <button onClick={()=>setMonthIdx(m=>Math.min(11,m+1))} style={{background:"none",border:"1px solid #252A3A",borderRadius:8,width:38,height:38,color:"#E8EAF0",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
       </div>
 
       {/* Tab switcher */}
@@ -1000,9 +1055,9 @@ function MonthlyTracker() {
         {[{id:"spending",label:"💸 Spending"},{id:"budget",label:"⚙️ Budget"}].map(t=>(
           <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{
             flex:1,padding:"10px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,
-            border:`1px solid ${activeTab===t.id?"#5C4A10":"#CBD0B5"}`,
-            background:activeTab===t.id?"rgba(92,74,16,0.08)":"none",
-            color:activeTab===t.id?"#5C4A10":"#5C6260",
+            border:`1px solid ${activeTab===t.id?"#E8C547":"#252A3A"}`,
+            background:activeTab===t.id?"#E8C54718":"none",
+            color:activeTab===t.id?"#E8C547":"#7A8099",
           }}>{t.label}</button>
         ))}
       </div>
@@ -1011,67 +1066,67 @@ function MonthlyTracker() {
       {activeTab==="spending" && <>
 
         {/* Flex summary */}
-        <div style={{background:"#EDE9DC",border:"1px solid #C2BDA8",borderRadius:12,padding:"16px",marginBottom:12}}>
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"16px",marginBottom:12}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:12}}>
             <div>
-              <div style={{fontSize:11,color:"#5C6260",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Flexible Spending</div>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:28,fontWeight:700,color:totalSpent>flexBudget?"#7A2020":"#202A2D"}}>{fmt(totalSpent)}</div>
-              <div style={{fontSize:12,color:"#5C6260",marginTop:3}}>of <span style={{fontFamily:"'DM Mono',monospace",color:"#202A2D"}}>{fmt(flexBudget)}</span> budget</div>
+              <div style={{fontSize:11,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Flexible Spending</div>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:28,fontWeight:700,color:totalSpent>flexBudget?"#E85454":"#E8EAF0"}}>{fmt(totalSpent)}</div>
+              <div style={{fontSize:12,color:"#7A8099",marginTop:3}}>of <span style={{fontFamily:"'DM Mono',monospace",color:"#E8EAF0"}}>{fmt(flexBudget)}</span> budget</div>
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{fontSize:11,color:"#5C6260",marginBottom:3}}>Remaining</div>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:20,fontWeight:700,color:totalLeft>=0?"#1F5C3E":"#7A2020"}}>
+              <div style={{fontSize:11,color:"#7A8099",marginBottom:3}}>Remaining</div>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:20,fontWeight:700,color:totalLeft>=0?"#5BC8A0":"#E85454"}}>
                 {totalLeft>=0?fmt(totalLeft):`−${fmt(Math.abs(totalLeft))}`}
               </div>
             </div>
           </div>
-          <div style={{height:8,borderRadius:4,background:"#CBD0B5",overflow:"hidden"}}>
+          <div style={{height:8,borderRadius:4,background:"#252A3A",overflow:"hidden"}}>
             <div style={{width:`${pctUsed}%`,height:"100%",borderRadius:4,transition:"width 0.4s ease",
-              background:totalSpent>flexBudget?"#7A2020":pctUsed>85?"#6B3618":"#1F5C3E"}}/>
+              background:totalSpent>flexBudget?"#E85454":pctUsed>85?"#F4845F":"#5BC8A0"}}/>
           </div>
-          <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"#5C6260"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"#7A8099"}}>
             <span>SGD 0</span><span>{Math.round(pctUsed)||0}% used</span><span>{fmt(flexBudget)}</span>
           </div>
         </div>
 
         {/* Spending rows */}
-        <div style={{background:"#EDE9DC",border:"1px solid #C2BDA8",borderRadius:12,overflow:"hidden",marginBottom:12}}>
-          <div style={{padding:"10px 16px",borderBottom:"1px solid #C2BDA8",fontSize:10,color:"#5C6260",textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
+          <div style={{padding:"10px 16px",borderBottom:"1px solid #252A3A",fontSize:10,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
             <span>Category</span><span>Spent this month</span>
           </div>
           {FLEX_CATS.map((cat,i)=>{
             const spent = parseFloat(spendData[cat.id])||0;
             const sharePct = totalSpent>0?Math.round((spent/totalSpent)*100):0;
             return (
-              <div key={cat.id} style={{padding:"12px 16px",borderBottom:i<FLEX_CATS.length-1?"1px solid #C2BDA8":"none",display:"flex",alignItems:"center",gap:10}}>
+              <div key={cat.id} style={{padding:"12px 16px",borderBottom:i<FLEX_CATS.length-1?"1px solid #252A3A":"none",display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontSize:16,flexShrink:0}}>{cat.icon}</span>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:500,marginBottom:4}}>{cat.label}</div>
-                  <div style={{height:4,borderRadius:2,background:"#CBD0B5",overflow:"hidden"}}>
-                    <div style={{width:`${sharePct}%`,height:"100%",background:"#5C4A10",borderRadius:2,transition:"width 0.3s ease"}}/>
+                  <div style={{height:4,borderRadius:2,background:"#252A3A",overflow:"hidden"}}>
+                    <div style={{width:`${sharePct}%`,height:"100%",background:"#E8C547",borderRadius:2,transition:"width 0.3s ease"}}/>
                   </div>
-                  {spent>0&&<div style={{fontSize:10,color:"#5C6260",marginTop:3}}>{sharePct}% of flex spending</div>}
+                  {spent>0&&<div style={{fontSize:10,color:"#7A8099",marginTop:3}}>{sharePct}% of flex spending</div>}
                 </div>
                 {inp(spendData[cat.id]||"", v=>setSpendVal(cat.id,v))}
               </div>
             );
           })}
-          <div style={{padding:"12px 16px",background:"#E4DFD0",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"2px solid #C2BDA8"}}>
+          <div style={{padding:"12px 16px",background:"#13161F",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"2px solid #252A3A"}}>
             <span style={{fontSize:13,fontWeight:700}}>Total Spent</span>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:totalSpent>flexBudget?"#7A2020":"#202A2D"}}>{fmt(totalSpent)}</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:totalSpent>flexBudget?"#E85454":"#E8EAF0"}}>{fmt(totalSpent)}</span>
           </div>
         </div>
 
         {/* Spending pie chart */}
         {(()=>{
           const fixedRows = [
-            {id:"rent",      label:"Rent",              icon:"🏠", color:"#3D2E60", budgeted:budget.rent},
-            {id:"tax",       label:"Income Tax",        icon:"📋", color:"#7A2020", budgeted:budget.tax},
-            {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#1E3F5C", budgeted:budget.insurance},
-            {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#1F5C3E", budgeted:budget.nonneg},
-            {id:"gym",       label:"Gym",               icon:"🏋️", color:"#5C4A10", budgeted:budget.gym},
-            {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#6B3618", budgeted:budget.travel},
-            {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#2A6868", budgeted:budget.savings},
+            {id:"rent",      label:"Rent",              icon:"🏠", color:"#A78BD4", budgeted:budget.rent},
+            {id:"tax",       label:"Income Tax",        icon:"📋", color:"#E8547A", budgeted:budget.tax},
+            {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#5B8DB8", budgeted:budget.insurance},
+            {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#5BC8A0", budgeted:budget.nonneg},
+            {id:"gym",       label:"Gym",               icon:"🏋️", color:"#E8C547", budgeted:budget.gym},
+            {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#E07B4F", budgeted:budget.travel},
+            {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#7EC8C8", budgeted:budget.savings},
           ];
           const allCats = [
             ...fixedRows.map(row => {
@@ -1086,10 +1141,10 @@ function MonthlyTracker() {
           const cx=100, cy=100, r=72, stroke=32, circ=2*Math.PI*r;
           let offset=0;
           return (
-            <div style={{background:"#EDE9DC",border:"1px solid #C2BDA8",borderRadius:12,padding:"14px 16px",marginBottom:12}}>
+            <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"14px 16px",marginBottom:12}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:11,color:"#5C6260",textTransform:"uppercase",letterSpacing:"0.08em"}}>Monthly Breakdown</div>
-                <div style={{fontSize:10,color:"#5C6260"}}>◉ actual &nbsp;○ budgeted</div>
+                <div style={{fontSize:11,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em"}}>Monthly Breakdown</div>
+                <div style={{fontSize:10,color:"#7A8099"}}>◉ actual &nbsp;○ budgeted</div>
               </div>
               <svg viewBox="0 0 200 200" style={{width:180,height:180,display:"block",margin:"0 auto"}}>
                 {allCats.map(cat=>{
@@ -1102,20 +1157,20 @@ function MonthlyTracker() {
                     opacity={cat.isActual ? 1 : 0.45}
                     style={{transform:"rotate(-90deg)",transformOrigin:"100px 100px",transition:"stroke-dasharray 0.4s ease"}}/>;
                 })}
-                <text x={cx} y={cy-8} textAnchor="middle" fill="#5C6260" fontSize="10" fontFamily="DM Sans">Total</text>
-                <text x={cx} y={cy+8} textAnchor="middle" fill="#202A2D" fontSize="12" fontWeight="700" fontFamily="DM Mono">{fmt(grandTotal).replace("SGD ","")}</text>
-                <text x={cx} y={cy+22} textAnchor="middle" fill="#5C6260" fontSize="10" fontFamily="DM Sans">SGD</text>
+                <text x={cx} y={cy-8} textAnchor="middle" fill="#7A8099" fontSize="10" fontFamily="DM Sans">Total</text>
+                <text x={cx} y={cy+8} textAnchor="middle" fill="#E8EAF0" fontSize="12" fontWeight="700" fontFamily="DM Mono">{fmt(grandTotal).replace("SGD ","")}</text>
+                <text x={cx} y={cy+22} textAnchor="middle" fill="#7A8099" fontSize="10" fontFamily="DM Sans">SGD</text>
               </svg>
               <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:7}}>
                 {allCats.map(cat=>(
                   <div key={cat.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",opacity:cat.isActual?1:0.6}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
                       <div style={{width:10,height:10,borderRadius:"50%",background:cat.color,flexShrink:0,opacity:cat.isActual?1:0.5}}/>
-                      <span style={{fontSize:12,color:"#202A2D"}}>{cat.icon} {cat.label}</span>
-                      {!cat.isActual&&<span style={{fontSize:10,color:"#5C6260"}}>(budgeted)</span>}
+                      <span style={{fontSize:12,color:"#E8EAF0"}}>{cat.icon} {cat.label}</span>
+                      {!cat.isActual&&<span style={{fontSize:10,color:"#7A8099"}}>(budgeted)</span>}
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,marginLeft:8}}>
-                      <span style={{fontSize:11,color:"#5C6260"}}>{Math.round((cat.value/grandTotal)*100)}%</span>
+                      <span style={{fontSize:11,color:"#7A8099"}}>{Math.round((cat.value/grandTotal)*100)}%</span>
                       <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,fontWeight:600}}>{fmt(cat.value)}</span>
                     </div>
                   </div>
@@ -1126,55 +1181,55 @@ function MonthlyTracker() {
         })()}
 
         {/* Full month snapshot */}
-        <div style={{background:"#EDE9DC",border:"1px solid #C2BDA8",borderRadius:12,padding:"14px 16px",marginBottom:8}}>
-          <div style={{fontSize:11,color:"#5C6260",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>Full Month Snapshot</div>
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"14px 16px",marginBottom:8}}>
+          <div style={{fontSize:11,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>Full Month Snapshot</div>
           {[
-            {label:"Income",           value:budget.income,    color:"#1F5C3E"},
-            ...(budget.extra>0?[{label:"🎉 Extra Income", value:budget.extra, color:"#1F5C3E"}]:[]),
-            {label:"Rent",             value:budget.rent,      color:"#3D2E60"},
-            {label:"Income Tax",       value:budget.tax,       color:"#7A2020"},
-            {label:"Insurance",        value:budget.insurance, color:"#1E3F5C"},
-            {label:"Non-negotiables",  value:budget.nonneg,    color:"#1F5C3E"},
-            {label:"Gym",              value:budget.gym,       color:"#5C4A10"},
-            {label:"Flexible Spending",value:flexBudget, actual:anySpend?totalSpent:null, color:"#6B3618"},
-            {label:"Travel Fund",      value:budget.travel,    color:"#6B3618"},
-            {label:"Savings & Invest.",value:budget.savings,   color:"#1E3F5C"},
+            {label:"Income",           value:budget.income,    color:"#5BC8A0"},
+            ...(budget.extra>0?[{label:"🎉 Extra Income", value:budget.extra, color:"#5BC8A0"}]:[]),
+            {label:"Rent",             value:budget.rent,      color:"#A78BD4"},
+            {label:"Income Tax",       value:budget.tax,       color:"#E8547A"},
+            {label:"Insurance",        value:budget.insurance, color:"#5B8DB8"},
+            {label:"Non-negotiables",  value:budget.nonneg,    color:"#5BC8A0"},
+            {label:"Gym",              value:budget.gym,       color:"#E8C547"},
+            {label:"Flexible Spending",value:flexBudget, actual:anySpend?totalSpent:null, color:"#F4845F"},
+            {label:"Travel Fund",      value:budget.travel,    color:"#F4845F"},
+            {label:"Savings & Invest.",value:budget.savings,   color:"#5B8DB8"},
           ].map(({label,value,actual,color})=>(
             <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
               <div style={{display:"flex",alignItems:"center",gap:7,flex:1,minWidth:0}}>
                 <div style={{width:6,height:6,borderRadius:"50%",background:color,flexShrink:0}}/>
-                <span style={{fontSize:12,color:"#5C6260"}}>{label}</span>
+                <span style={{fontSize:12,color:"#7A8099"}}>{label}</span>
               </div>
               <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
                 {actual!=null?(
                   <span>
-                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:actual>value?"#7A2020":"#1F5C3E"}}>{fmt(actual)}</span>
-                    <span style={{fontSize:10,color:"#5C6260"}}> / {fmt(value)}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:actual>value?"#E85454":"#5BC8A0"}}>{fmt(actual)}</span>
+                    <span style={{fontSize:10,color:"#7A8099"}}> / {fmt(value)}</span>
                   </span>
                 ):(
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:label.includes("Income")?"#1F5C3E":"#202A2D"}}>{fmt(value)}</span>
+                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:label.includes("Income")?"#5BC8A0":"#E8EAF0"}}>{fmt(value)}</span>
                 )}
               </div>
             </div>
           ))}
-          <div style={{borderTop:"1px solid #C2BDA8",marginTop:6,paddingTop:10,display:"flex",justifyContent:"space-between"}}>
+          <div style={{borderTop:"1px solid #252A3A",marginTop:6,paddingTop:10,display:"flex",justifyContent:"space-between"}}>
             <span style={{fontSize:13,fontWeight:700}}>Total Income</span>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:"#1F5C3E"}}>{fmt(budget.income+(budget.extra||0))}</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:"#5BC8A0"}}>{fmt(budget.income+(budget.extra||0))}</span>
           </div>
         </div>
       </>}
 
       {/* ── BUDGET TAB ── */}
       {activeTab==="budget" && <>
-        <div style={{background:"rgba(92,74,16,0.06)",border:"1px solid #E8C54733",borderRadius:10,padding:"10px 14px",marginBottom:12,fontSize:12,color:"#5C6260",lineHeight:1.6}}>
-          ⚙️ Changes from <strong style={{color:"#202A2D"}}>{MONTHS[monthIdx]}</strong> carry forward to all later months automatically. Flexible spending adjusts to keep the budget balanced.
+        <div style={{background:"#E8C54712",border:"1px solid #E8C54733",borderRadius:10,padding:"10px 14px",marginBottom:12,fontSize:12,color:"#7A8099",lineHeight:1.6}}>
+          ⚙️ Changes from <strong style={{color:"#E8EAF0"}}>{MONTHS[monthIdx]}</strong> carry forward to all later months automatically. Flexible spending adjusts to keep the budget balanced.
         </div>
 
-        <div style={{background:"#EDE9DC",border:"1px solid #C2BDA8",borderRadius:12,overflow:"hidden",marginBottom:12}}>
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
           {BUDGET_ROWS.map((row,i)=>(
             <div key={row.id} style={{
               padding:"13px 16px",
-              borderBottom:i<BUDGET_ROWS.length-1?"1px solid #C2BDA8":"none",
+              borderBottom:i<BUDGET_ROWS.length-1?"1px solid #252A3A":"none",
               background:row.isIncome?"#0D1A140A":"none",
               display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
             }}>
@@ -1183,65 +1238,65 @@ function MonthlyTracker() {
                   <span style={{fontSize:15}}>{row.icon}</span>
                   <span style={{fontSize:13,fontWeight:600,color:row.color}}>{row.label}</span>
                 </div>
-                {row.hint&&<div style={{fontSize:10,color:"#5C6260",paddingLeft:22}}>{row.hint}</div>}
+                {row.hint&&<div style={{fontSize:10,color:"#7A8099",paddingLeft:22}}>{row.hint}</div>}
               </div>
-              {inp(budget[row.id]||"", v=>setBudgetVal(row.id, v), row.isIncome?"#1F5C3E":undefined)}
+              {inp(budget[row.id]||"", v=>setBudgetVal(row.id, v), row.isIncome?"#5BC8A0":undefined)}
             </div>
           ))}
         </div>
 
         {/* Derived flex result */}
         <div style={{
-          background:flexBudget<0?"#EDE9DC":"#EDE9DC",
+          background:flexBudget<0?"#1F0D10":"#0D1F18",
           border:`1px solid ${flexBudget<0?"#E8545444":"#5BC8A044"}`,
           borderRadius:12,padding:"14px 16px",marginBottom:12,
           display:"flex",justifyContent:"space-between",alignItems:"center",
         }}>
           <div>
-            <div style={{fontSize:13,fontWeight:700,color:flexBudget<0?"#7A2020":"#1F5C3E"}}>🛍️ Flexible Spending Budget</div>
-            <div style={{fontSize:11,color:"#5C6260",marginTop:3}}>Auto-calculated · Income minus all expenses</div>
-            {flexBudget<0&&<div style={{fontSize:11,color:"#7A2020",marginTop:4}}>⚠ Over by {fmt(Math.abs(flexBudget))} — reduce an expense above</div>}
+            <div style={{fontSize:13,fontWeight:700,color:flexBudget<0?"#E85454":"#5BC8A0"}}>🛍️ Flexible Spending Budget</div>
+            <div style={{fontSize:11,color:"#7A8099",marginTop:3}}>Auto-calculated · Income minus all expenses</div>
+            {flexBudget<0&&<div style={{fontSize:11,color:"#E85454",marginTop:4}}>⚠ Over by {fmt(Math.abs(flexBudget))} — reduce an expense above</div>}
           </div>
-          <div style={{fontFamily:"'DM Mono',monospace",fontSize:22,fontWeight:700,color:flexBudget<0?"#7A2020":"#1F5C3E",flexShrink:0,marginLeft:12}}>{fmt(flexBudget)}</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:22,fontWeight:700,color:flexBudget<0?"#E85454":"#5BC8A0",flexShrink:0,marginLeft:12}}>{fmt(flexBudget)}</div>
         </div>
 
         {/* Fixed actuals */}
-        <div style={{background:"#EDE9DC",border:"1px solid #C2BDA8",borderRadius:12,overflow:"hidden",marginBottom:12}}>
-          <div style={{padding:"10px 16px",borderBottom:"1px solid #C2BDA8",fontSize:10,color:"#5C6260",textTransform:"uppercase",letterSpacing:"0.08em"}}>
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
+          <div style={{padding:"10px 16px",borderBottom:"1px solid #252A3A",fontSize:10,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em"}}>
             Fixed Expense Actuals — for pie chart
           </div>
-          <div style={{padding:"8px 16px",borderBottom:"1px solid #C2BDA8",fontSize:11,color:"#5C6260",lineHeight:1.5}}>
+          <div style={{padding:"8px 16px",borderBottom:"1px solid #252A3A",fontSize:11,color:"#7A8099",lineHeight:1.5}}>
             Enter what you actually spent. Leave blank to use the budgeted amount in the chart.
           </div>
           {[
-            {id:"rent",      label:"Rent",              icon:"🏠", color:"#3D2E60", budgeted:budget.rent},
-            {id:"tax",       label:"Income Tax",        icon:"📋", color:"#7A2020", budgeted:budget.tax},
-            {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#1E3F5C", budgeted:budget.insurance},
-            {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#1F5C3E", budgeted:budget.nonneg},
-            {id:"gym",       label:"Gym",               icon:"🏋️", color:"#5C4A10", budgeted:budget.gym},
-            {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#6B3618", budgeted:budget.travel},
-            {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#1E3F5C", budgeted:budget.savings},
+            {id:"rent",      label:"Rent",              icon:"🏠", color:"#A78BD4", budgeted:budget.rent},
+            {id:"tax",       label:"Income Tax",        icon:"📋", color:"#E8547A", budgeted:budget.tax},
+            {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#5B8DB8", budgeted:budget.insurance},
+            {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#5BC8A0", budgeted:budget.nonneg},
+            {id:"gym",       label:"Gym",               icon:"🏋️", color:"#E8C547", budgeted:budget.gym},
+            {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#F4845F", budgeted:budget.travel},
+            {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#5B8DB8", budgeted:budget.savings},
           ].map((row,i,arr)=>{
             const rawActual = spendData[`${row.id}_actual`];
             const hasActual = rawActual !== "" && rawActual !== undefined && !isNaN(parseFloat(rawActual));
             const actual = hasActual ? parseFloat(rawActual) : null;
             const diff = hasActual ? actual - row.budgeted : 0;
             return (
-              <div key={row.id} style={{padding:"11px 16px",borderBottom:i<arr.length-1?"1px solid #C2BDA8":"none",display:"flex",alignItems:"center",gap:10}}>
+              <div key={row.id} style={{padding:"11px 16px",borderBottom:i<arr.length-1?"1px solid #252A3A":"none",display:"flex",alignItems:"center",gap:10}}>
                 <div style={{width:3,height:36,borderRadius:2,background:row.color,flexShrink:0}}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:500}}>{row.icon} {row.label}</div>
-                  <div style={{fontSize:10,color:"#5C6260",marginTop:2}}>
-                    Budgeted: <span style={{fontFamily:"'DM Mono',monospace",color:"#202A2D"}}>{fmt(row.budgeted)}</span>
-                    {hasActual && diff!==0 && <span style={{marginLeft:6,color:diff>0?"#7A2020":"#1F5C3E"}}>{diff>0?"↑":"↓"} {fmt(Math.abs(diff)).replace("SGD ","")}</span>}
+                  <div style={{fontSize:10,color:"#7A8099",marginTop:2}}>
+                    Budgeted: <span style={{fontFamily:"'DM Mono',monospace",color:"#E8EAF0"}}>{fmt(row.budgeted)}</span>
+                    {hasActual && diff!==0 && <span style={{marginLeft:6,color:diff>0?"#E85454":"#5BC8A0"}}>{diff>0?"↑":"↓"} {fmt(Math.abs(diff)).replace("SGD ","")}</span>}
                   </div>
                 </div>
                 <input type="number" inputMode="decimal"
                   placeholder={fmt(row.budgeted).replace("SGD ","")}
                   value={rawActual||""}
                   onChange={e=>setSpendVal(`${row.id}_actual`, e.target.value)}
-                  style={{background:"#E4DFD0",border:`1px solid ${BORDER}`,borderRadius:8,
-                    color:hasActual&&diff>0?"#7A2020":hasActual&&diff<0?"#1F5C3E":"#202A2D",
+                  style={{background:"#0A0D14",border:`1px solid #252A3A`,borderRadius:8,
+                    color:hasActual&&diff>0?"#E85454":hasActual&&diff<0?"#5BC8A0":"#E8EAF0",
                     fontSize:14,fontFamily:"'DM Mono',monospace",padding:"8px 10px",width:128,textAlign:"right",outline:"none",flexShrink:0}}
                 />
               </div>
@@ -1255,7 +1310,7 @@ function MonthlyTracker() {
             if(window.confirm(`Reset ${MONTHS[monthIdx]}'s budget to default?\n\nThis only affects ${MONTHS[monthIdx]} — earlier months and later months that inherited from here will re-compute from the previous override or default.`)){
               setOverrides(prev=>{const n={...prev};delete n[monthIdx];return n;});
             }
-          }} style={{width:"100%",background:"none",border:"1px solid #C2BDA8",borderRadius:8,padding:"10px",color:"#5C6260",fontSize:12,cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
+          }} style={{width:"100%",background:"none",border:"1px solid #252A3A",borderRadius:8,padding:"10px",color:"#7A8099",fontSize:12,cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
             ↩ Reset {MONTHS[monthIdx]} to inherited default
           </button>
         )}
@@ -1339,7 +1394,7 @@ function BackupRestore() {
         </div>
         <button onClick={exportData} style={{
           width:"100%", padding:"14px", borderRadius:10,
-          border:"none", background:GREEN, color:"#F7F5EB",
+          border:"none", background:GREEN, color:"#0F1117",
           fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:"inherit",
         }}>
           📥 Download Backup File
@@ -1392,8 +1447,7 @@ function App() {
   const [isDark, setIsDark] = useState(() => {
     try { return localStorage.getItem("theme") !== "light"; } catch { return true; }
   });
-  const theme = isDark ? DARK : LIGHT;
-  applyTheme(theme);
+  applyTheme(isDark ? DARK : LIGHT);
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -1402,14 +1456,14 @@ function App() {
   };
 
   return (
-    <div style={{minHeight:"100vh",background:theme.BG,color:theme.TEXT,paddingBottom:80}}>
+    <div style={{minHeight:"100vh",background:BG,color:TEXT,paddingBottom:80}}>
       {/* Top bar */}
-      <div style={{position:"sticky",top:0,zIndex:50,background:theme.CARD,borderBottom:`1px solid ${theme.BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{position:"sticky",top:0,zIndex:50,background:CARD,borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
-          <div style={{fontSize:10,color:theme.MUTED,letterSpacing:"0.1em",textTransform:"uppercase"}}>Personal Finance</div>
+          <div style={{fontSize:10,color:MUTED,letterSpacing:"0.1em",textTransform:"uppercase"}}>Personal Finance</div>
           <div style={{fontSize:17,fontWeight:700,letterSpacing:"-0.01em"}}>{TABS.find(t=>t.id===tab)?.icon} {TABS.find(t=>t.id===tab)?.label}</div>
         </div>
-        <button onClick={toggleTheme} style={{background:"none",border:`1px solid ${theme.BORDER}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",fontSize:13,color:theme.MUTED,display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
+        <button onClick={toggleTheme} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",fontSize:13,color:MUTED,fontFamily:"inherit"}}>
           {isDark ? "☀️" : "🌙"}
         </button>
       </div>
@@ -1424,9 +1478,9 @@ function App() {
         {TABS.map(t=>{
           const active = tab===t.id;
           return (
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"12px 8px 10px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,borderTop:`2px solid ${active?theme.TEXT:"transparent"}`}}>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"12px 8px 10px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,borderTop:`2px solid ${active?YELLOW:"transparent"}`}}>
               <span style={{fontSize:20}}>{t.icon}</span>
-              <span style={{fontSize:9,fontWeight:600,color:active?theme.TEXT:theme.MUTED,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'Outfit',sans-serif"}}>{t.label}</span>
+              <span style={{fontSize:10,fontWeight:600,color:active?YELLOW:MUTED,letterSpacing:"0.04em"}}>{t.label}</span>
             </button>
           );
         })}
@@ -1442,7 +1496,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.5.1";
+const APP_VERSION = "1.5.6";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
