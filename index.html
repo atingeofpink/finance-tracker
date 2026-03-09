@@ -964,8 +964,9 @@ const DEFAULT_BUDGET = (m) => ({
   travel:    800,
   savings:   3600,
   extra:     0,
+  interest:  0,
 });
-const calcFlex = (b) => Math.round((b.income + b.extra - b.rent - b.tax - b.insurance - b.nonneg - b.gym - b.travel - b.savings) * 100) / 100;
+const calcFlex = (b) => Math.round((b.income + b.extra + (b.interest||0) - b.rent - b.tax - b.insurance - b.nonneg - b.gym - b.travel - b.savings) * 100) / 100;
 
 // Carry-forward: find effective budget for a month by applying all overrides
 // from month 0 up to monthIdx in order (later overrides win)
@@ -980,6 +981,7 @@ const getEffectiveBudget = (overrides, monthIdx) => {
 const BUDGET_ROWS = [
   {id:"income",    label:"Income",            icon:"💵", color:"#5BC8A0", isIncome:true},
   {id:"extra",     label:"Extra Income",      icon:"🎉", color:"#5BC8A0", isIncome:true, hint:"Windfalls, bonuses, one-offs"},
+  {id:"interest",  label:"Bank Interest",     icon:"🏦", color:"#5BC8A0", isIncome:true, hint:"Interest from savings accounts"},
   {id:"rent",      label:"Rent",              icon:"🏠", color:"#A78BD4"},
   {id:"tax",       label:"Income Tax",        icon:"📋", color:"#E8547A"},
   {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#5B8DB8"},
@@ -1128,13 +1130,16 @@ function MonthlyTracker() {
             {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#E07B4F", budgeted:budget.travel},
             {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#7EC8C8", budgeted:budget.savings},
           ];
+          const flexActual = FLEX_CATS.reduce((s,c)=>s+(parseFloat(spendData[c.id])||0),0);
+          const flexPieVal = flexActual>0 ? flexActual : flexBudget;
+          const flexIsActual = flexActual>0;
           const allCats = [
             ...fixedRows.map(row => {
               const actual = spendData[`${row.id}_actual`];
               const hasActual = actual !== "" && actual !== undefined && !isNaN(parseFloat(actual));
               return {...row, value: hasActual ? parseFloat(actual) : row.budgeted, isActual: hasActual};
             }),
-            ...FLEX_CATS.map((c,i)=>({...c, value:parseFloat(spendData[c.id])||0, color:PALETTE[(i+5)%PALETTE.length], isFlex:true, isActual:true})).filter(c=>c.value>0),
+            {id:"flex", label:"Flexible Spending", icon:"🛍️", color:PALETTE[4], value:flexPieVal, isActual:flexIsActual, isFlex:true},
           ].filter(c=>c.value>0);
           const grandTotal = allCats.reduce((s,c)=>s+c.value, 0);
           if (grandTotal===0) return null;
@@ -1186,6 +1191,7 @@ function MonthlyTracker() {
           {[
             {label:"Income",           value:budget.income,    color:"#5BC8A0"},
             ...(budget.extra>0?[{label:"🎉 Extra Income", value:budget.extra, color:"#5BC8A0"}]:[]),
+            ...(budget.interest>0?[{label:"🏦 Bank Interest", value:budget.interest, color:"#5BC8A0"}]:[]),
             {label:"Rent",             value:budget.rent,      color:"#A78BD4"},
             {label:"Income Tax",       value:budget.tax,       color:"#E8547A"},
             {label:"Insurance",        value:budget.insurance, color:"#5B8DB8"},
@@ -1207,14 +1213,14 @@ function MonthlyTracker() {
                     <span style={{fontSize:10,color:"#7A8099"}}> / {fmt(value)}</span>
                   </span>
                 ):(
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:label.includes("Income")?"#5BC8A0":"#E8EAF0"}}>{fmt(value)}</span>
+                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:(label==="Income"||label.includes("Extra Income")||label.includes("Bank Interest"))?"#5BC8A0":"#E8EAF0"}}>{fmt(value)}</span>
                 )}
               </div>
             </div>
           ))}
           <div style={{borderTop:"1px solid #252A3A",marginTop:6,paddingTop:10,display:"flex",justifyContent:"space-between"}}>
             <span style={{fontSize:13,fontWeight:700}}>Total Income</span>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:"#5BC8A0"}}>{fmt(budget.income+(budget.extra||0))}</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:"#5BC8A0"}}>{fmt(budget.income+(budget.extra||0)+(budget.interest||0))}</span>
           </div>
         </div>
       </>}
@@ -1496,7 +1502,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.5.6";
+const APP_VERSION = "1.5.7";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
