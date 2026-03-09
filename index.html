@@ -997,6 +997,50 @@ const initSpending = () => {
   return d;
 };
 
+
+function InterestTracker({monthIdx, spending, setSpending, setBudgetVal}) {
+  const spendData  = spending[monthIdx] || {};
+  const [expr, setExpr] = useState(spendData.interest_expr || "");
+  const [total, setTotal] = useState(parseFloat(spendData.interest_total)||0);
+
+  const evaluate = (raw) => {
+    setExpr(raw);
+    try {
+      // Allow only digits, spaces, + - * / . ( )
+      const safe = raw.replace(/[^0-9+\-*\/.()\s]/g,"");
+      // eslint-disable-next-line no-new-func
+      const result = safe.trim() ? Math.max(0, parseFloat(Function('"use strict";return ('+safe+')')()) || 0) : 0;
+      const rounded = Math.round(result*100)/100;
+      setTotal(rounded);
+      setBudgetVal("interest", rounded);
+      setSpending(prev=>({...prev,[monthIdx]:{...(prev[monthIdx]||{}),interest_expr:raw,interest_total:rounded}}));
+    } catch {}
+  };
+
+  return (
+    <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"13px 16px",marginBottom:12}}>
+      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
+        <span style={{fontSize:15}}>🏦</span>
+        <span style={{fontSize:13,fontWeight:600,color:GREEN}}>Bank Interest</span>
+        <span style={{fontSize:10,color:MUTED,marginLeft:2}}>e.g. 12.50 + 8.30 + 44</span>
+      </div>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <input
+          value={expr}
+          onChange={e=>evaluate(e.target.value)}
+          placeholder="12.50 + 8.30 + 44"
+          style={{flex:1,background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,
+            color:TEXT,fontSize:14,padding:"9px 11px",fontFamily:"'DM Mono',monospace",outline:"none"}}
+        />
+        <div style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:GREEN,
+          flexShrink:0,minWidth:90,textAlign:"right"}}>
+          = {fmt(total).replace("SGD ","")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MonthlyTracker() {
   const [monthIdx,  setMonthIdx]  = useState(new Date().getMonth());
   const [activeTab, setActiveTab] = useState("spending");
@@ -1231,11 +1275,13 @@ function MonthlyTracker() {
           ⚙️ Changes from <strong style={{color:"#E8EAF0"}}>{MONTHS[monthIdx]}</strong> carry forward to all later months automatically. Flexible spending adjusts to keep the budget balanced.
         </div>
 
+        <InterestTracker monthIdx={monthIdx} spending={spending} setSpending={setSpending} setBudgetVal={setBudgetVal} />
+
         <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
-          {BUDGET_ROWS.map((row,i)=>(
+          {BUDGET_ROWS.filter(row=>row.id!=="interest").map((row,i,arr)=>(
             <div key={row.id} style={{
               padding:"13px 16px",
-              borderBottom:i<BUDGET_ROWS.length-1?"1px solid #252A3A":"none",
+              borderBottom:i<arr.length-1?"1px solid #252A3A":"none",
               background:row.isIncome?"#0D1A140A":"none",
               display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
             }}>
@@ -1502,7 +1548,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.5.7";
+const APP_VERSION = "1.5.9";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
