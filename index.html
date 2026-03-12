@@ -206,18 +206,54 @@ function SinkingFunds() {
   const openModal = type => { setForm({amount:"",note:"",date:today()}); setFormError(""); setModal({type,fundId:activeId}); };
   const closeModal = () => { setModal(null); setFormError(""); };
 
+  const rebalance = (txns) => {
+    const ordered = [...txns].reverse();
+    let running = 0;
+    return ordered.map(t => {
+      if (t.type === "opening") { running = t.balance; return t; }
+      running += t.amount;
+      return {...t, balance: Math.round(running * 100) / 100};
+    }).reverse();
+  };
+
   const submitTxn = () => {
     const amt = parseFloat(form.amount);
     if (!form.amount||isNaN(amt)||amt<=0){ setFormError("Enter a valid amount."); return; }
-    if (modal.type==="withdraw"&&amt>funds[modal.fundId].balance){ setFormError(`Max: ${fmt(funds[modal.fundId].balance)}`); return; }
-    const isDeposit = modal.type==="deposit";
-    setFunds(prev => {
-      const fund = prev[modal.fundId];
-      const newBal = isDeposit ? fund.balance+amt : fund.balance-amt;
-      const txn = {id:Date.now(),type:modal.type,amount:isDeposit?amt:-amt,note:form.note.trim()||(isDeposit?"Deposit":"Withdrawal"),date:form.date,balance:newBal};
-      return {...prev,[modal.fundId]:{balance:newBal,txns:[txn,...fund.txns]}};
-    });
+    const isEdit = modal.type === "edit";
+    const isDeposit = isEdit ? modal.origAmount >= 0 : modal.type === "deposit";
+    if (isEdit) {
+      setFunds(prev => {
+        const fund = prev[modal.fundId];
+        const newAmount = isDeposit ? amt : -amt;
+        const updated = fund.txns.map(t => t.id === modal.txnId ? {...t, amount:newAmount, note:form.note.trim()||t.note, date:form.date} : t);
+        const rebalanced = rebalance(updated);
+        return {...prev, [modal.fundId]: {balance: rebalanced[0].balance, txns: rebalanced}};
+      });
+    } else {
+      if (modal.type==="withdraw"&&amt>funds[modal.fundId].balance){ setFormError(`Max: ${fmt(funds[modal.fundId].balance)}`); return; }
+      setFunds(prev => {
+        const fund = prev[modal.fundId];
+        const newBal = isDeposit ? fund.balance+amt : fund.balance-amt;
+        const txn = {id:Date.now(),type:modal.type,amount:isDeposit?amt:-amt,note:form.note.trim()||(isDeposit?"Deposit":"Withdrawal"),date:form.date,balance:newBal};
+        return {...prev,[modal.fundId]:{balance:newBal,txns:[txn,...fund.txns]}};
+      });
+    }
     closeModal();
+  };
+
+  const openEditModal = (txn) => {
+    setForm({amount:String(Math.abs(txn.amount)), note:txn.note, date:txn.date});
+    setFormError("");
+    setModal({type:"edit", fundId:activeId, txnId:txn.id, origAmount:txn.amount});
+  };
+
+  const deleteTxn = (txnId) => {
+    setFunds(prev => {
+      const fund = prev[activeId];
+      const filtered = fund.txns.filter(t => t.id !== txnId);
+      const rebalanced = rebalance(filtered);
+      return {...prev, [activeId]: {balance: rebalanced[0]?.balance ?? 0, txns: rebalanced}};
+    });
   };
 
   return (
@@ -268,22 +304,28 @@ function SinkingFunds() {
         </button>
 
         {showTxns && (
-          <div style={{maxHeight:260,overflowY:"auto"}}>
+          <div style={{maxHeight:320,overflowY:"auto"}}>
             {activeData.txns.map((txn,i)=>{
               const isDeposit=txn.amount>=0, isOpening=txn.type==="opening";
               return (
-                <div key={txn.id} style={{padding:"11px 16px",borderBottom:i<activeData.txns.length-1?`1px solid ${BORDER}`:"none",background:i%2===0?"transparent":"#13161F"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                <div key={txn.id} style={{padding:"10px 16px",borderBottom:i<activeData.txns.length-1?`1px solid ${BORDER}`:"none",background:i%2===0?"transparent":"#13161F"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:13,color:isOpening?MUTED:TEXT,fontStyle:isOpening?"italic":"normal",marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{txn.note}</div>
                       <div style={{fontSize:11,color:MUTED}}>{fmtDate(txn.date)}</div>
                     </div>
-                    <div style={{textAlign:"right",marginLeft:12,flexShrink:0}}>
+                    <div style={{textAlign:"right",flexShrink:0}}>
                       <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:600,color:isOpening?MUTED:isDeposit?GREEN:RED}}>
                         {isOpening?"—":(isDeposit?"+":"−")+fmt(Math.abs(txn.amount)).replace("SGD ","")}
                       </div>
                       <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:MUTED}}>{fmt(txn.balance)}</div>
                     </div>
+                    {!isOpening && (
+                      <div style={{display:"flex",flexDirection:"column",gap:4,flexShrink:0}}>
+                        <button onClick={()=>openEditModal(txn)} title="Edit" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,width:28,height:28,color:MUTED,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>&#x270E;</button>
+                        <button onClick={()=>{ if(window.confirm("Delete this transaction? Balances will be recalculated.")) deleteTxn(txn.id); }} title="Delete" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,width:28,height:28,color:RED,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>&#x2715;</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -379,11 +421,16 @@ function SinkingFunds() {
             <div style={{width:36,height:4,borderRadius:2,background:BORDER,margin:"0 auto 20px"}}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
               <div>
-                <div style={{fontSize:17,fontWeight:700}}>{modal.type==="deposit"?"💰 Add Money":"💸 Use Funds"}</div>
+                <div style={{fontSize:17,fontWeight:700}}>{modal.type==="edit"?"✎ Edit Transaction":modal.type==="deposit"?"💰 Add Money":"💸 Use Funds"}</div>
                 <div style={{fontSize:12,color:MUTED,marginTop:2}}>{FUND_META.find(f=>f.id===modal.fundId).name} · {fmt(funds[modal.fundId].balance)}</div>
               </div>
               <button onClick={closeModal} style={{background:BORDER,border:"none",borderRadius:"50%",width:32,height:32,color:TEXT,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
             </div>
+            {modal.type==="edit" && (
+              <div style={{fontSize:11,color:YELLOW,background:`${YELLOW}12`,border:`1px solid ${YELLOW}33`,borderRadius:8,padding:"8px 12px",marginBottom:14,lineHeight:1.5}}>
+                Balances after this transaction will be recalculated automatically.
+              </div>
+            )}
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
               <div>
                 <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Amount (SGD) *</div>
@@ -399,8 +446,8 @@ function SinkingFunds() {
               </div>
               {formError && <div style={{fontSize:13,color:RED,padding:"8px 12px",background:`${RED}15`,borderRadius:8}}>{formError}</div>}
             </div>
-            <button onClick={submitTxn} style={{width:"100%",marginTop:20,padding:"16px",borderRadius:12,border:"none",background:modal.type==="deposit"?GREEN:RED,color:"#0F1117",fontWeight:700,fontSize:16,cursor:"pointer"}}>
-              {modal.type==="deposit"?"Confirm Deposit":"Confirm Withdrawal"}
+            <button onClick={submitTxn} style={{width:"100%",marginTop:20,padding:"16px",borderRadius:12,border:"none",background:modal.type==="edit"?BLUE:modal.type==="deposit"?GREEN:RED,color:"#0F1117",fontWeight:700,fontSize:16,cursor:"pointer"}}>
+              {modal.type==="edit"?"Save Changes":modal.type==="deposit"?"Confirm Deposit":"Confirm Withdrawal"}
             </button>
           </div>
         </div>
@@ -1548,7 +1595,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.5.9";
+const APP_VERSION = "1.6.0";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
