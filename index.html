@@ -2,1768 +2,1153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="theme-color" content="#F7F5EB" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Finance" />
-  <title>Finance Tracker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio — Cheryl Ng</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0c10; --surface:#111318; --surface2:#181c24;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+    --text:#e8eaf0; --muted:#6b7280; --accent:#c8f55a;
+    --red:#f55a7a; --green:#5af5a0; --us:#7eb3ff; --sg:#ffb347; --en:#a78bfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;top:-40%;left:-20%;width:80vw;height:80vh;background:radial-gradient(ellipse,rgba(126,179,255,0.05) 0%,transparent 65%);pointer-events:none;z-index:0}
+  body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:60vw;height:60vh;background:radial-gradient(ellipse,rgba(255,179,71,0.04) 0%,transparent 65%);pointer-events:none;z-index:0}
+  .page{max-width:1200px;margin:0 auto;padding:44px 36px 80px;position:relative;z-index:1}
 
-    body {
-      margin: 0;
-      background: #0F1117;
-      font-family: 'Inter', sans-serif;
-      color: #202A2D;
-    }
+  /* HEADER */
+  header{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:24px;margin-bottom:36px;border-bottom:1px solid var(--border)}
+  header h1{font-family:'DM Serif Display',serif;font-size:2.5rem;font-weight:400;letter-spacing:-.02em;line-height:1}
+  .header-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:7px}
+  .header-right{text-align:right}
+  .total-num{font-family:'DM Serif Display',serif;font-size:2.8rem;letter-spacing:-.03em;color:var(--accent);line-height:1}
+  .total-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:5px}
 
-    /* Noise texture overlay */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 9999;
-      opacity: 0.4;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
-      background-size: 200px 200px;
-    }
+  /* TABS */
+  .tabs{display:flex;gap:4px;margin-bottom:32px;background:var(--surface);padding:4px;border-radius:10px;width:fit-content;border:1px solid var(--border)}
+  .tab{padding:8px 22px;border-radius:7px;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.05em;color:var(--muted);transition:all .2s;border:none;background:none}
+  .tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+  .tab:hover:not(.active){color:var(--text)}
+  .panel{display:none}.panel.active{display:block}
 
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    input, button { font-family: inherit; }
+  /* SUMMARY CARDS */
+  .summary-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:36px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;transition:border-color .2s}
+  .card:hover{border-color:var(--border2)}
+  .card-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .card-val{font-family:'DM Serif Display',serif;font-size:1.6rem;letter-spacing:-.02em;line-height:1}
+  .card-sub{font-size:11px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace}
+  .pos{color:var(--green)}.neg{color:var(--red)}
 
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #CBD0B5; border-radius: 4px; }
+  /* SECTION */
+  .section{margin-bottom:40px}
+  .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .section-title{display:flex;align-items:center;gap:10px;font-family:'DM Serif Display',serif;font-size:1.35rem;font-weight:400}
+  .section-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .section-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.07em}
 
-    /* Entry animations */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .fade-up { animation: fadeUp 0.8s ease-out both; }
-    .fade-up-1 { animation-delay: 0.05s; }
-    .fade-up-2 { animation-delay: 0.12s; }
-    .fade-up-3 { animation-delay: 0.19s; }
-    .fade-up-4 { animation-delay: 0.26s; }
+  /* TABLE */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .table-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:760px}
+  thead th{padding:12px 14px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:right;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);font-weight:400;white-space:nowrap}
+  thead th:first-child,thead th:nth-child(2){text-align:left}
+  .col-divider{border-left:1px solid var(--border)!important}
+  tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .13s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:rgba(255,255,255,.025)}
+  td{padding:11px 14px;text-align:right;vertical-align:middle;font-size:13px}
+  td:first-child,td:nth-child(2){text-align:left}
+  td.col-divider{border-left:1px solid rgba(255,255,255,.04)}
+  .rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:22px}
+  .sym-badge{font-family:'DM Mono',monospace;font-size:11.5px;font-weight:500;letter-spacing:.04em;background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:5px;display:inline-block}
+  .sym-name{font-size:11px;color:var(--muted);margin-top:3px}
+  .num{font-family:'DM Mono',monospace;font-size:12.5px}
+  .pl-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-family:'DM Mono',monospace;font-size:11.5px;font-weight:500;white-space:nowrap}
+  .pl-pill.pos{background:rgba(90,245,160,.1);color:var(--green)}
+  .pl-pill.neg{background:rgba(245,90,122,.1);color:var(--red)}
+  .pct-badge{font-family:'DM Mono',monospace;font-size:11px;padding:2px 7px;border-radius:4px}
+  .pct-badge.pos{background:rgba(90,245,160,.08);color:var(--green)}
+  .pct-badge.neg{background:rgba(245,90,122,.08);color:var(--red)}
+  .wt-row{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+  .wt-label{font-family:'DM Mono',monospace;font-size:11px;min-width:36px;text-align:right}
+  .wt-track{width:52px;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+  .wt-fill{height:100%;border-radius:2px}
+  tfoot tr td{border-top:1px solid var(--border2);padding-top:12px;padding-bottom:12px;font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+  .footnote{font-size:11px;color:var(--muted);padding:10px 16px 14px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;letter-spacing:.03em;background:rgba(255,255,255,.01)}
 
-    /* Pill buttons */
-    .btn-pill {
-      border-radius: 999px;
-      padding: 10px 22px;
-      font-weight: 500;
-      font-size: 13px;
-      cursor: pointer;
-      border: 1.5px solid #202A2D;
-      background: #202A2D;
-      color: #F7F5EB;
-      transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-      font-family: inherit;
-    }
-    .btn-pill:hover { background: #CBD0B5; color: #202A2D; border-color: #CBD0B5; }
+  /* MODAL */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:32px;width:480px;max-width:95vw;position:relative}
+  .modal h2{font-family:'DM Serif Display',serif;font-size:1.5rem;font-weight:400;margin-bottom:6px}
+  .modal-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .form-group select,.form-group input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .2s}
+  .form-group select:focus,.form-group input:focus{border-color:var(--accent)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{padding:10px 22px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.06em;transition:all .2s}
+  .btn-primary{background:var(--accent);color:#0a0c10;font-weight:600}
+  .btn-primary:hover{background:#d4f870}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+  .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+  .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1}
+  .modal-close:hover{color:var(--text)}
 
-    .btn-pill-outline {
-      border-radius: 999px;
-      padding: 10px 22px;
-      font-weight: 500;
-      font-size: 13px;
-      cursor: pointer;
-      border: 1.5px solid #CBD0B5;
-      background: transparent;
-      color: #202A2D;
-      transition: background 0.25s ease, color 0.25s ease;
-      font-family: inherit;
-    }
-    .btn-pill-outline:hover { background: #CBD0B5; }
+  /* ACTION BUTTONS */
+  .action-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+  .action-btn:hover{border-color:var(--border2);color:var(--text)}
+  .action-btn.accent{border-color:rgba(200,245,90,.3);color:var(--accent)}
+  .action-btn.accent:hover{background:rgba(200,245,90,.08)}
 
-    /* Tab active state */
-    .tab-active {
-      background: #202A2D !important;
-      color: #F7F5EB !important;
-      border-color: #202A2D !important;
-    }
+  /* TRANSACTION LOG */
+  .tx-list{display:flex;flex-direction:column;gap:8px;margin-top:0}
+  .tx-item{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;transition:border-color .2s}
+  .tx-item:hover{border-color:var(--border2)}
+  .tx-badge{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;padding:3px 9px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);flex-shrink:0}
+  .tx-details{flex:1}
+  .tx-main{font-family:'DM Mono',monospace;font-size:12px;color:var(--text)}
+  .tx-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px}
+  .tx-amount{font-family:'DM Serif Display',serif;font-size:1.1rem;text-align:right}
+  .tx-delete{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;border-radius:4px;transition:color .15s;flex-shrink:0}
+  .tx-delete:hover{color:var(--red)}
+  .tx-type-buy{color:var(--us)}
+  .tx-type-div{color:var(--green)}
+  .empty-state{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:center;padding:32px;letter-spacing:.06em}
 
-    /* Input fields */
-    .field {
-      background: #F0EDE1;
-      border: 1.5px solid #CBD0B5;
-      border-radius: 12px;
-      color: #202A2D;
-      font-size: 15px;
-      padding: 10px 14px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .field:focus { border-color: #202A2D; box-shadow: 0 0 0 3px rgba(203,208,181,0.4); }
-    .field-mono { font-family: 'DM Mono', monospace; }
-    .field-right { text-align: right; }
-  </style>
+  /* DIV SUMMARY */
+  .div-summary{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:20px;display:flex;gap:32px;flex-wrap:wrap}
+  .div-stat{}
+  .div-stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .div-stat-val{font-family:'DM Serif Display',serif;font-size:1.5rem;letter-spacing:-.02em}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .summary-grid{animation:fadeUp .3s ease both}
+  .section{animation:fadeUp .4s ease both}
+  .section:nth-child(1){animation-delay:.1s}
+  .section:nth-child(2){animation-delay:.2s}
+
+  @media(max-width:860px){.summary-grid{grid-template-columns:1fr 1fr};header{flex-direction:column;align-items:flex-start;gap:14px}}
+  @media(max-width:580px){.page{padding:24px 16px 60px};.summary-grid{grid-template-columns:1fr}}
+  .en-edit{background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:10px;padding:3px 8px;border-radius:5px;font-family:'DM Mono',monospace;letter-spacing:.05em;transition:all .15s}.en-edit:hover{color:var(--en);border-color:var(--en)}
+</style>
 </head>
 <body>
-<div id="root"></div>
+<div class="page">
 
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<header>
+  <div>
+    <h1>My Portfolio</h1>
+    <div class="header-sub">Cheryl Ng</div>
+  </div>
+  <div class="header-right">
+    <div class="total-num" id="hdr-total">—</div>
+    <div class="total-label">Total · SGD equivalent</div>
+    <div id="sync-status" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.08em;margin-top:6px">⟳ Loading…</div>
+  </div>
+</header>
 
-<script type="text/babel">
-const { useState, useEffect, useMemo } = React;
+<!-- SUMMARY CARDS -->
+<div class="summary-grid">
+  <div class="card">
+    <div class="card-label">Total Positions</div>
+    <div class="card-val" style="color:var(--accent)" id="s-pos">28</div>
+    <div class="card-sub">across 4 brokerages</div>
+  </div>
+  <div class="card">
+    <div class="card-label">US Stocks &amp; ETFs</div>
+    <div class="card-val" style="color:var(--us)" id="s-us-val">—</div>
+    <div class="card-sub" id="s-us-pct">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">SG Stocks / REITs</div>
+    <div class="card-val" style="color:var(--sg)" id="s-sg-val">—</div>
+    <div class="card-sub" id="s-sg-pct">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Endowus Cash</div>
+    <div class="card-val" style="color:var(--en)" id="s-en-val">—</div>
+    <div class="card-sub" id="s-en-pct">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Dividends Received</div>
+    <div class="card-val pos" id="s-div-recv">SGD 0</div>
+    <div class="card-sub" id="s-div-recv-sub">this year</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Total Unrealised P&amp;L</div>
+    <div class="card-val" id="s-pl">—</div>
+    <div class="card-sub" id="s-pl-sub">—</div>
+  </div>
+</div>
 
-// ─── SUPABASE CONFIG ──────────────────────────────────────────────────────────
-// Paste your Supabase credentials here after setup:
-const SUPABASE_URL = "https://xwrrryobwimidamfasmd.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3cnJyeW9id2ltaWRhbWZhc21kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDU2NzcsImV4cCI6MjA4ODg4MTY3N30.Uem-Ki_Hwxu8IkMWMjBw5_PvVL_0JGFfL9uWIruiqbA";
-const SUPABASE_USER_ID = "cheryl";
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('portfolio',this)">Portfolio</button>
+  <button class="tab" onclick="switchTab('transactions',this)">Transactions</button>
+  <button class="tab" onclick="switchTab('dividends',this)">Dividends</button>
+</div>
 
-const supabase = (SUPABASE_URL !== "YOUR_SUPABASE_URL")
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+<!-- PORTFOLIO TAB -->
+<div class="panel active" id="panel-portfolio">
 
-// ─── STORAGE LAYER ────────────────────────────────────────────────────────────
-// Writes to both localStorage (instant) and Supabase (cloud sync).
-// Reads from Supabase on first load; falls back to localStorage if offline.
-
-let _syncStatus = "idle"; // "idle" | "syncing" | "ok" | "error"
-const _syncListeners = new Set();
-function setSyncStatus(s) { _syncStatus = s; _syncListeners.forEach(fn => fn(s)); }
-function onSyncStatus(fn) { _syncListeners.add(fn); return () => _syncListeners.delete(fn); }
-function getSyncStatus() { return _syncStatus; }
-
-const STORAGE_KEYS = ["monthly-tracker","budget-overrides","sf-funds","bonus-allocation-v2","theme"];
-
-async function dbLoad() {
-  if (!supabase) return null;
-  try {
-    const { data, error } = await supabase
-      .from("finance_data")
-      .select("*")
-      .eq("user_id", SUPABASE_USER_ID)
-      .single();
-    if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows
-    return data?.payload || null;
-  } catch { return null; }
-}
-
-async function dbSave(payload) {
-  if (!supabase) return;
-  setSyncStatus("syncing");
-  try {
-    const { error } = await supabase
-      .from("finance_data")
-      .upsert({ user_id: SUPABASE_USER_ID, payload, updated_at: new Date().toISOString() },
-               { onConflict: "user_id" });
-    if (error) throw error;
-    setSyncStatus("ok");
-  } catch { setSyncStatus("error"); }
-}
-
-// Debounced cloud save — batches rapid writes into one request
-let _saveTimer = null;
-let _pendingPayload = null;
-function scheduleSave() {
-  clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(async () => {
-    const payload = {};
-    STORAGE_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) payload[k] = v; });
-    await dbSave(payload);
-  }, 1500);
-}
-
-function lsGet(key) {
-  try { return localStorage.getItem(key); } catch { return null; }
-}
-function lsSet(key, value) {
-  try {
-    localStorage.setItem(key, value);
-    scheduleSave();
-  } catch {}
-}
-
-// On app start: pull from Supabase and hydrate localStorage
-async function hydrateFromCloud() {
-  const payload = await dbLoad();
-  if (!payload) return false;
-  STORAGE_KEYS.forEach(k => { if (payload[k]) localStorage.setItem(k, payload[k]); });
-  return true;
-}
-
-// ─── THEME ───────────────────────────────────────────────────────────────────
-const DARK = {
-  BG:"#0F1117",CARD:"#181C27",BORDER:"#252A3A",TEXT:"#E8EAF0",MUTED:"#7A8099",
-  GREEN:"#5BC8A0",YELLOW:"#E8C547",RED:"#E8547A",BLUE:"#5B8DB8",PURPLE:"#A78BD4",ORANGE:"#E07B4F",
-  PALETTE:["#A78BD4","#5BC8A0","#F4845F","#E8C547","#5B8DB8","#E07B4F","#E8547A","#7EC8C8","#F0A500","#B0C4DE"],
-};
-const LIGHT = {
-  BG:"#F7F5EB",CARD:"#EDE9DC",BORDER:"#C2BDA8",TEXT:"#202A2D",MUTED:"#5C6260",
-  GREEN:"#1F5C3E",YELLOW:"#5C4A10",RED:"#7A2020",BLUE:"#1E3F5C",PURPLE:"#3D2E60",ORANGE:"#6B3618",
-  PALETTE:["#3D2E60","#1F5C3E","#6B3618","#5C4A10","#1E3F5C","#7A2020","#2A5C40","#1A4A5C","#5C3A18","#2E2048"],
-};
-let BG=DARK.BG,CARD=DARK.CARD,BORDER=DARK.BORDER,TEXT=DARK.TEXT,MUTED=DARK.MUTED;
-let GREEN=DARK.GREEN,YELLOW=DARK.YELLOW,RED=DARK.RED,BLUE=DARK.BLUE,PURPLE=DARK.PURPLE,ORANGE=DARK.ORANGE;
-let SAGE="#CBD0B5",PALETTE=DARK.PALETTE;
-function applyTheme(t){
-  BG=t.BG;CARD=t.CARD;BORDER=t.BORDER;TEXT=t.TEXT;MUTED=t.MUTED;
-  GREEN=t.GREEN;YELLOW=t.YELLOW;RED=t.RED;BLUE=t.BLUE;PURPLE=t.PURPLE;ORANGE=t.ORANGE;
-  PALETTE=t.PALETTE;
-  document.body.style.background=BG;
-  document.body.style.color=TEXT;
-}
-
-const fmt = n => "SGD " + Math.abs(n).toLocaleString("en-SG",{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtDate = d => new Date(d).toLocaleDateString("en-SG",{day:"2-digit",month:"short",year:"numeric"});
-const today = () => new Date().toISOString().split("T")[0];
-const inp = (extra={}) => ({background:CARD,border:`1.5px solid ${BORDER}`,borderRadius:12,color:TEXT,fontSize:15,padding:"10px 14px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%",...extra});
-
-// ─── SINKING FUNDS ───────────────────────────────────────────────────────────
-const INSURANCE_MILESTONES = [
-  { month:"July 2026", date:"2026-07-01", color:RED, items:[
-    {label:"GE Whole Life",amount:1892.40},{label:"GE Hospitalisation",amount:401.00},
-    {label:"Singlife ECI",amount:1452.00},{label:"Singlife Comprehensive CI",amount:1522.50},
-    {label:"Careshield Life Cash",amount:391.78},{label:"CPF MA Top-up (Careshield)",amount:600.00},
-  ]},
-  { month:"October 2026", date:"2026-10-01", color:ORANGE, items:[
-    {label:"Singlife Term",amount:584.75},{label:"CPF MA Top-up (Careshield)",amount:838.28},
-  ]},
-];
-
-const FUND_META = [
-  {id:"travel",   name:"Travel",           icon:"✈",  color:YELLOW,  monthlyAdd:800 },
-  {id:"insurance",name:"Insurance",         icon:"🛡", color:BLUE,    monthlyAdd:540 },
-  {id:"home",     name:"4TP Maintenance",   icon:"🔧", color:GREEN,   monthlyAdd:165 },
-  {id:"newhome",  name:"New Home",          icon:"🏠", color:PURPLE,  monthlyAdd:1200},
-];
-
-const DEFAULT_BALANCES = {travel:431.51, insurance:1327.55, home:347.69, newhome:235415};
-
-const initFunds = () => FUND_META.reduce((acc,f) => ({
-  ...acc,
-  [f.id]: { balance:DEFAULT_BALANCES[f.id], txns:[{id:1,type:"opening",note:"Opening balance",amount:0,date:today(),balance:DEFAULT_BALANCES[f.id]}] }
-}), {});
-
-function projectedBalance(currentBalance, monthlyAdd, targetMonthIndex) {
-  const cur = new Date().getMonth();
-  return currentBalance + monthlyAdd * Math.max(0, targetMonthIndex - cur);
-}
-
-function SinkingFunds() {
-  const [funds, setFunds] = useState(() => { try { const s=lsGet("sf-funds"); return s?JSON.parse(s):initFunds(); } catch{ return initFunds(); }});
-  const [activeId, setActiveId] = useState("travel");
-  const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({amount:"",note:"",date:today()});
-  const [formError, setFormError] = useState("");
-  const [showShortfall, setShowShortfall] = useState(false);
-  const [showTxns, setShowTxns] = useState(true);
-
-  useEffect(() => { try{ lsSet("sf-funds", JSON.stringify(funds)); }catch{} }, [funds]);
-
-  const activeFund = FUND_META.find(f=>f.id===activeId);
-  const activeData = funds[activeId];
-  const totalBalance = FUND_META.reduce((s,f)=>s+funds[f.id].balance, 0);
-
-  const ins = useMemo(() => {
-    const bal = funds.insurance.balance, mo = 540;
-    const projJuly = projectedBalance(bal, mo, 6);
-    const julyTotal = INSURANCE_MILESTONES[0].items.reduce((s,i)=>s+i.amount,0);
-    const julyShortfall = julyTotal - projJuly;
-    const afterJuly = Math.max(0, projJuly - julyTotal);
-    const projOct = afterJuly + mo*3;
-    const octTotal = INSURANCE_MILESTONES[1].items.reduce((s,i)=>s+i.amount,0);
-    const octShortfall = octTotal - projOct;
-    const extraMonthly = julyShortfall>0 ? Math.ceil(julyShortfall/4) : 0;
-    return {projJuly,julyTotal,julyShortfall,projOct,octTotal,octShortfall,extraMonthly};
-  }, [funds.insurance.balance]);
-
-  const openModal = type => { setForm({amount:"",note:"",date:today()}); setFormError(""); setModal({type,fundId:activeId}); };
-  const closeModal = () => { setModal(null); setFormError(""); };
-
-  const rebalance = (txns) => {
-    const ordered = [...txns].reverse();
-    let running = 0;
-    return ordered.map(t => {
-      if (t.type === "opening") { running = t.balance; return t; }
-      running += t.amount;
-      return {...t, balance: Math.round(running * 100) / 100};
-    }).reverse();
-  };
-
-  const submitTxn = () => {
-    const amt = parseFloat(form.amount);
-    if (!form.amount||isNaN(amt)||amt<=0){ setFormError("Enter a valid amount."); return; }
-    const isEdit = modal.type === "edit";
-    const isDeposit = isEdit ? modal.origAmount >= 0 : modal.type === "deposit";
-    if (isEdit) {
-      setFunds(prev => {
-        const fund = prev[modal.fundId];
-        const newAmount = isDeposit ? amt : -amt;
-        const updated = fund.txns.map(t => t.id === modal.txnId ? {...t, amount:newAmount, note:form.note.trim()||t.note, date:form.date} : t);
-        const rebalanced = rebalance(updated);
-        return {...prev, [modal.fundId]: {balance: rebalanced[0].balance, txns: rebalanced}};
-      });
-    } else {
-      if (modal.type==="withdraw"&&amt>funds[modal.fundId].balance){ setFormError(`Max: ${fmt(funds[modal.fundId].balance)}`); return; }
-      setFunds(prev => {
-        const fund = prev[modal.fundId];
-        const newBal = isDeposit ? fund.balance+amt : fund.balance-amt;
-        const txn = {id:Date.now(),type:modal.type,amount:isDeposit?amt:-amt,note:form.note.trim()||(isDeposit?"Deposit":"Withdrawal"),date:form.date,balance:newBal};
-        return {...prev,[modal.fundId]:{balance:newBal,txns:[txn,...fund.txns]}};
-      });
-    }
-    closeModal();
-  };
-
-  const openEditModal = (txn) => {
-    setForm({amount:String(Math.abs(txn.amount)), note:txn.note, date:txn.date});
-    setFormError("");
-    setModal({type:"edit", fundId:activeId, txnId:txn.id, origAmount:txn.amount});
-  };
-
-  const deleteTxn = (txnId) => {
-    setFunds(prev => {
-      const fund = prev[activeId];
-      const filtered = fund.txns.filter(t => t.id !== txnId);
-      const rebalanced = rebalance(filtered);
-      return {...prev, [activeId]: {balance: rebalanced[0]?.balance ?? 0, txns: rebalanced}};
-    });
-  };
-
-  return (
-    <div style={{padding:"16px 16px 8px"}}>
-      {/* Total */}
-      <div style={{textAlign:"center",marginBottom:16}}>
-        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.1em"}}>Total Across All Funds</div>
-        <div style={{fontSize:28,fontWeight:700,fontFamily:"'DM Mono',monospace",color:GREEN,marginTop:2}}>{fmt(totalBalance)}</div>
+  <!-- US STOCKS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-dot" style="background:var(--us);box-shadow:0 0 8px rgba(126,179,255,0.5)"></span>
+        US Stocks &amp; ETFs
       </div>
-
-      {/* Fund cards grid */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-        {FUND_META.map(f => {
-          const isActive = f.id===activeId;
-          const hasAlert = f.id==="insurance"&&ins.julyShortfall>0;
-          return (
-            <div key={f.id} onClick={()=>setActiveId(f.id)} style={{background:isActive?`${f.color}18`:CARD,border:`1px solid ${isActive?f.color:BORDER}`,borderTop:`3px solid ${f.color}`,borderRadius:12,padding:"14px 12px",cursor:"pointer",position:"relative"}}>
-              {hasAlert && <div style={{position:"absolute",top:8,right:8,width:7,height:7,borderRadius:"50%",background:RED}}/>}
-              <div style={{fontSize:22,marginBottom:6}}>{f.icon}</div>
-              <div style={{fontSize:10,color:MUTED,marginBottom:2}}>{f.name}</div>
-              <div style={{fontSize:15,fontWeight:700,fontFamily:"'DM Mono',monospace",color:f.color}}>{fmt(funds[f.id].balance)}</div>
-              <div style={{fontSize:10,color:f.color,marginTop:4,opacity:0.8}}>+{fmt(f.monthlyAdd).replace("SGD ","")}/mo</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Active fund */}
-      <div style={{background:CARD,border:`1px solid ${activeFund.color}44`,borderRadius:12,overflow:"hidden",marginBottom:12}}>
-        <div style={{padding:"14px 16px",background:`${activeFund.color}0C`,borderBottom:`1px solid ${BORDER}`}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{fontWeight:700,fontSize:15}}>{activeFund.icon} {activeFund.name}</div>
-              <div style={{fontSize:12,color:MUTED,fontFamily:"'DM Mono',monospace",marginTop:2}}>
-                Balance: <span style={{color:activeFund.color,fontWeight:700}}>{fmt(activeData.balance)}</span>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>openModal("deposit")} style={{padding:"9px 14px",borderRadius:8,border:`1px solid ${GREEN}`,background:`${GREEN}20`,color:GREEN,fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Add</button>
-              <button onClick={()=>openModal("withdraw")} style={{padding:"9px 14px",borderRadius:8,border:`1px solid ${RED}`,background:`${RED}20`,color:RED,fontWeight:700,fontSize:13,cursor:"pointer"}}>− Use</button>
-            </div>
-          </div>
-        </div>
-
-        <button onClick={()=>setShowTxns(s=>!s)} style={{width:"100%",background:"none",border:"none",borderBottom:showTxns?`1px solid ${BORDER}`:"none",padding:"10px 16px",color:MUTED,fontSize:12,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
-          <span>Transaction History ({activeData.txns.length})</span>
-          <span>{showTxns?"▲":"▼"}</span>
-        </button>
-
-        {showTxns && (
-          <div style={{maxHeight:320,overflowY:"auto"}}>
-            {activeData.txns.map((txn,i)=>{
-              const isDeposit=txn.amount>=0, isOpening=txn.type==="opening";
-              return (
-                <div key={txn.id} style={{padding:"10px 16px",borderBottom:i<activeData.txns.length-1?`1px solid ${BORDER}`:"none",background:i%2===0?"transparent":"#13161F"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,color:isOpening?MUTED:TEXT,fontStyle:isOpening?"italic":"normal",marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{txn.note}</div>
-                      <div style={{fontSize:11,color:MUTED}}>{fmtDate(txn.date)}</div>
-                    </div>
-                    <div style={{textAlign:"right",flexShrink:0}}>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:600,color:isOpening?MUTED:isDeposit?GREEN:RED}}>
-                        {isOpening?"—":(isDeposit?"+":"−")+fmt(Math.abs(txn.amount)).replace("SGD ","")}
-                      </div>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:MUTED}}>{fmt(txn.balance)}</div>
-                    </div>
-                    {!isOpening && (
-                      <div style={{display:"flex",flexDirection:"column",gap:4,flexShrink:0}}>
-                        <button onClick={()=>openEditModal(txn)} title="Edit" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,width:28,height:28,color:MUTED,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>&#x270E;</button>
-                        <button onClick={()=>{ if(window.confirm("Delete this transaction? Balances will be recalculated.")) deleteTxn(txn.id); }} title="Delete" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,width:28,height:28,color:RED,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>&#x2715;</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Insurance shortfall */}
-      {activeId==="insurance" && (
-        <div style={{marginBottom:12}}>
-          <button onClick={()=>setShowShortfall(s=>!s)} style={{width:"100%",background:CARD,border:`1px solid ${showShortfall?BLUE:BORDER}`,borderRadius:showShortfall?"12px 12px 0 0":12,padding:"13px 16px",color:TEXT,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span>📊</span>
-              <span style={{fontWeight:600,fontSize:13}}>Premium Schedule & Shortfall</span>
-              {ins.julyShortfall>0&&<span style={{fontSize:10,color:RED,background:`${RED}18`,padding:"2px 7px",borderRadius:20,fontWeight:700}}>⚠ Shortfall</span>}
-            </div>
-            <span style={{color:MUTED}}>{showShortfall?"▲":"▼"}</span>
-          </button>
-
-          {showShortfall && (
-            <div style={{background:CARD,border:`1px solid ${BLUE}`,borderTop:"none",borderRadius:"0 0 12px 12px",padding:"16px"}}>
-              <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Projected Balance</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-                {[
-                  {label:"Now",value:funds.insurance.balance,color:BLUE},
-                  {label:"By July",value:ins.projJuly,color:ins.projJuly>=ins.julyTotal?GREEN:RED},
-                  {label:"By Oct",value:ins.projOct,color:ins.projOct>=ins.octTotal?GREEN:RED},
-                ].map(({label,value,color})=>(
-                  <div key={label} style={{background:BG,borderRadius:8,padding:"10px 12px",border:`1px solid ${BORDER}`}}>
-                    <div style={{fontSize:10,color:MUTED,marginBottom:3}}>{label}</div>
-                    <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,color,fontSize:13}}>{fmt(value)}</div>
-                  </div>
-                ))}
-              </div>
-
-              {INSURANCE_MILESTONES.map(ms=>{
-                const total=ms.items.reduce((s,i)=>s+i.amount,0);
-                return (
-                  <div key={ms.month} style={{marginBottom:14}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                      <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <div style={{width:8,height:8,borderRadius:"50%",background:ms.color}}/>
-                        <span style={{fontWeight:700,fontSize:13,color:ms.color}}>{ms.month}</span>
-                      </div>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:ms.color,fontWeight:700}}>{fmt(total)}</span>
-                    </div>
-                    <div style={{background:BG,borderRadius:8,border:`1px solid ${BORDER}`,overflow:"hidden"}}>
-                      {ms.items.map((item,i)=>(
-                        <div key={item.label} style={{display:"flex",justifyContent:"space-between",padding:"9px 12px",borderBottom:i<ms.items.length-1?`1px solid ${BORDER}`:"none",alignItems:"center"}}>
-                          <span style={{fontSize:12,color:TEXT}}>{item.label}</span>
-                          <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:MUTED}}>{fmt(item.amount)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {ins.julyShortfall>0 ? (
-                <div style={{background:`${RED}10`,border:`1px solid ${RED}33`,borderRadius:10,padding:"14px"}}>
-                  <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>⚠ How to Cover the Shortfall</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                    <div style={{background:BG,borderRadius:8,padding:"12px"}}>
-                      <div style={{fontSize:10,color:MUTED,marginBottom:4}}>Option A · Frontload</div>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,color:YELLOW,fontSize:15}}>+{fmt(ins.extraMonthly)}/mo</div>
-                      <div style={{fontSize:11,color:MUTED,marginTop:4}}>Extra Apr–Jul on top of SGD 540</div>
-                    </div>
-                    <div style={{background:BG,borderRadius:8,padding:"12px"}}>
-                      <div style={{fontSize:10,color:MUTED,marginBottom:4}}>Option B · Bonus Top-up</div>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,color:PURPLE,fontSize:15}}>{fmt(ins.julyShortfall)}</div>
-                      <div style={{fontSize:11,color:MUTED,marginTop:4}}>One-time from April bonus</div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{background:`${GREEN}10`,border:`1px solid ${GREEN}33`,borderRadius:10,padding:"12px 14px",fontSize:13,color:GREEN}}>✓ Your projected balance covers all premiums.</div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      <button onClick={()=>{if(window.confirm("Reset all funds to opening balances?"))setFunds(initFunds());}}
-        style={{width:"100%",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"10px",color:MUTED,fontSize:12,cursor:"pointer",marginBottom:8}}>
-        Reset to Opening Balances
-      </button>
-
-      {/* Modal */}
-      {modal && (
-        <div style={{position:"fixed",inset:0,background:"#000000CC",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}} onClick={e=>e.target===e.currentTarget&&closeModal()}>
-          <div style={{background:CARD,borderRadius:"20px 20px 0 0",padding:"24px 20px 48px",width:"100%",maxWidth:500}}>
-            <div style={{width:36,height:4,borderRadius:2,background:BORDER,margin:"0 auto 20px"}}/>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-              <div>
-                <div style={{fontSize:17,fontWeight:700}}>{modal.type==="edit"?"✎ Edit Transaction":modal.type==="deposit"?"💰 Add Money":"💸 Use Funds"}</div>
-                <div style={{fontSize:12,color:MUTED,marginTop:2}}>{FUND_META.find(f=>f.id===modal.fundId).name} · {fmt(funds[modal.fundId].balance)}</div>
-              </div>
-              <button onClick={closeModal} style={{background:BORDER,border:"none",borderRadius:"50%",width:32,height:32,color:TEXT,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-            </div>
-            {modal.type==="edit" && (
-              <div style={{fontSize:11,color:YELLOW,background:`${YELLOW}12`,border:`1px solid ${YELLOW}33`,borderRadius:8,padding:"8px 12px",marginBottom:14,lineHeight:1.5}}>
-                Balances after this transaction will be recalculated automatically.
-              </div>
-            )}
-            <div style={{display:"flex",flexDirection:"column",gap:14}}>
-              <div>
-                <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Amount (SGD) *</div>
-                <input type="number" inputMode="decimal" placeholder="0.00" value={form.amount} onChange={e=>{setForm(f=>({...f,amount:e.target.value}));setFormError("");}} style={inp({fontSize:24,fontFamily:"'DM Mono',monospace",padding:"14px",textAlign:"center"})} autoFocus />
-              </div>
-              <div>
-                <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Note</div>
-                <input placeholder={modal.type==="deposit"?"e.g. Monthly top-up":"e.g. GE Whole Life premium"} value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={inp()} />
-              </div>
-              <div>
-                <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Date</div>
-                <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} style={inp({colorScheme:"dark"})} />
-              </div>
-              {formError && <div style={{fontSize:13,color:RED,padding:"8px 12px",background:`${RED}15`,borderRadius:8}}>{formError}</div>}
-            </div>
-            <button onClick={submitTxn} style={{width:"100%",marginTop:20,padding:"16px",borderRadius:12,border:"none",background:modal.type==="edit"?BLUE:modal.type==="deposit"?GREEN:RED,color:"#0F1117",fontWeight:700,fontSize:16,cursor:"pointer"}}>
-              {modal.type==="edit"?"Save Changes":modal.type==="deposit"?"Confirm Deposit":"Confirm Withdrawal"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── BONUS ALLOCATION ────────────────────────────────────────────────────────
-
-const DEFAULT_BONUSES = [{
-  id: 1,
-  name: "Annual Bonus",
-  month: "April",
-  salary: 11225,
-  multiplier: 11.5,
-  grossBonus: 129087.50,
-  cashReceived: 32271.88,
-  items: [
-    {id:101,label:"Mom",category:"Family",value:3000,color:"#A78BD4"},
-    {id:102,label:"CPF SA Top-up",category:"Retirement",value:4000,color:"#5BC8A0"},
-    {id:103,label:"Treat loved ones",category:"Personal",value:1000,color:"#F4845F"},
-    {id:104,label:"Korea & Australia trip",category:"Travel",value:5000,color:"#E8C547"},
-  ],
-}];
-
-function BonusDetail({bonus, onChange}) {
-  const [editingParams, setEditingParams] = useState(false);
-  const [adding, setAdding]               = useState(false);
-  const [editingId, setEditingId]         = useState(null);
-  const [newLabel, setNewLabel]           = useState("");
-  const [newCat, setNewCat]               = useState("");
-  const [newVal, setNewVal]               = useState("");
-
-  const {name, month, cashReceived, items, type="cash", rsuUnits=0, rsuPrice=0} = bonus;
-  const isRSU = type === "rsu";
-  const grossRSU = isRSU ? rsuUnits * rsuPrice : 0;
-
-  const totalSetAside = items.reduce((s,i)=>s+i.value,0);
-  const remaining     = cashReceived - totalSetAside;
-  const over          = remaining < 0;
-  const pct           = n => cashReceived > 0 ? ((n/cashReceived)*100).toFixed(1)+"%" : "0%";
-
-  const upd     = (field, val) => onChange({...bonus, [field]: val});
-  const updItem = (id, field, val) => onChange({...bonus, items: items.map(i=>i.id===id?{...i,[field]:field==="value"?parseFloat(val)||0:val}:i)});
-  const removeItem = id => onChange({...bonus, items: items.filter(i=>i.id!==id)});
-  const addItem = () => {
-    const val = parseFloat(newVal);
-    if (!newLabel.trim()||isNaN(val)||val<=0) return;
-    onChange({...bonus, items:[...items,{id:Date.now(),label:newLabel.trim(),category:newCat.trim()||"Other",value:val,color:PALETTE[items.length%PALETTE.length]}]});
-    setNewLabel(""); setNewCat(""); setNewVal(""); setAdding(false);
-  };
-
-  const fs = {background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:15,padding:"10px 12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%"};
-  const fieldStyle = fs;
-
-  return (
-    <div>
-      {/* Header card */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderTop:`3px solid ${isRSU?PURPLE:YELLOW}`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div>
-            {isRSU && (
-              <div style={{display:"flex",gap:12,marginBottom:8}}>
-                <div>
-                  <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>Units Vested</div>
-                  <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:16,color:PURPLE}}>{rsuUnits.toLocaleString()}</div>
-                </div>
-                <div style={{color:MUTED,alignSelf:"flex-end",marginBottom:2,fontSize:13}}>×</div>
-                <div>
-                  <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>Price/Unit</div>
-                  <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:16,color:PURPLE}}>SGD {rsuPrice.toFixed(2)}</div>
-                </div>
-                <div style={{color:MUTED,alignSelf:"flex-end",marginBottom:2,fontSize:13}}>=</div>
-                <div>
-                  <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>Gross Value</div>
-                  <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:16,color:PURPLE}}>{fmt(grossRSU)}</div>
-                </div>
-              </div>
-            )}
-            <div style={{fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:3}}>Cash Received (after tax)</div>
-            <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,color:YELLOW}}>{fmt(cashReceived)}</div>
-            <div style={{fontSize:11,color:MUTED,marginTop:2}}>{month} · {isRSU?"RSU Vest":"Cash Bonus"}</div>
-          </div>
-          <button onClick={()=>setEditingParams(p=>!p)} style={{background:editingParams?`${YELLOW}18`:BORDER,border:`1px solid ${editingParams?YELLOW:BORDER}`,borderRadius:8,padding:"8px 12px",color:editingParams?YELLOW:MUTED,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0,marginLeft:10}}>
-            ✎ Edit
-          </button>
-        </div>
-      </div>
-
-      {/* Edit parameters */}
-      {editingParams&&(
-        <div style={{background:CARD,border:`1px solid ${YELLOW}44`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
-
-          {/* Type selector */}
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Bonus Type</div>
-            <div style={{display:"flex",gap:8}}>
-              {[{id:"cash",label:"💵 Cash Bonus"},{id:"rsu",label:"📈 RSU Vest"}].map(t=>(
-                <button key={t.id} onClick={()=>upd("type",t.id)} style={{
-                  flex:1,padding:"10px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,
-                  border:`1px solid ${type===t.id?YELLOW:BORDER}`,
-                  background:type===t.id?`${YELLOW}18`:"none",
-                  color:type===t.id?YELLOW:MUTED,
-                }}>{t.label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Common fields */}
-          {[
-            {label:"Bonus name",     field:"name",  type:"text", value:name},
-            {label:"Month received", field:"month", type:"text", value:month},
-          ].map(({label,field,type:t,value})=>(
-            <div key={field} style={{marginBottom:10}}>
-              <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>{label}</div>
-              <input type={t} value={value} onChange={e=>upd(field,e.target.value)} style={fs} />
-            </div>
-          ))}
-
-          {/* RSU-specific fields */}
-          {isRSU&&(
-            <div style={{background:"#13102A",border:`1px solid ${PURPLE}33`,borderRadius:10,padding:"12px",marginBottom:10}}>
-              <div style={{fontSize:11,color:PURPLE,fontWeight:600,marginBottom:10}}>📈 RSU Details</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-                <div>
-                  <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Units Vested</div>
-                  <input type="number" inputMode="decimal" value={rsuUnits||""} placeholder="0"
-                    onChange={e=>upd("rsuUnits",parseFloat(e.target.value)||0)}
-                    style={{...fs,fontFamily:"'DM Mono',monospace"}} />
-                </div>
-                <div>
-                  <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Price / Unit (SGD)</div>
-                  <input type="number" inputMode="decimal" value={rsuPrice||""} placeholder="0.00"
-                    onChange={e=>upd("rsuPrice",parseFloat(e.target.value)||0)}
-                    style={{...fs,fontFamily:"'DM Mono',monospace"}} />
-                </div>
-              </div>
-              {rsuUnits>0&&rsuPrice>0&&(
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",background:"#0A0D14",borderRadius:8}}>
-                  <span style={{fontSize:12,color:MUTED}}>Gross RSU Value</span>
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,color:PURPLE}}>{fmt(rsuUnits*rsuPrice)}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Cash received */}
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>
-              Cash Received after Tax (SGD)
-            </div>
-            <input type="number" inputMode="decimal" value={cashReceived||""} placeholder="0.00"
-              onChange={e=>upd("cashReceived",parseFloat(e.target.value)||0)}
-              style={{...fs,fontFamily:"'DM Mono',monospace"}} />
-            {isRSU&&grossRSU>0&&cashReceived>0&&(
-              <div style={{fontSize:11,color:MUTED,marginTop:5}}>
-                Effective tax rate: <span style={{color:RED,fontFamily:"'DM Mono',monospace"}}>{(((grossRSU-cashReceived)/grossRSU)*100).toFixed(1)}%</span>
-                <span style={{marginLeft:8}}>Tax withheld: <span style={{color:RED,fontFamily:"'DM Mono',monospace"}}>{fmt(grossRSU-cashReceived)}</span></span>
-              </div>
-            )}
-          </div>
-
-          <button onClick={()=>setEditingParams(false)} style={{width:"100%",padding:"10px",borderRadius:8,border:`1px solid ${GREEN}`,background:`${GREEN}18`,color:GREEN,fontWeight:700,fontSize:13,cursor:"pointer"}}>Done</button>
-        </div>
-      )}
-
-      {/* Available for investment */}
-      <div style={{background:over?"#1F0D10":"#0D1F18",border:`1px solid ${over?RED:GREEN}44`,borderRadius:12,padding:"14px 16px",marginBottom:12,textAlign:"center"}}>
-        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Available for Investment</div>
-        <div style={{fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,color:over?RED:GREEN}}>{fmt(remaining)}</div>
-        {over&&<div style={{fontSize:12,color:RED,marginTop:4}}>⚠ Set-asides exceed cash received</div>}
-      </div>
-
-      {/* Set-asides */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:12}}>
-        <div style={{padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
-          <span>Set-asides</span><span>Amount · % · Remaining</span>
-        </div>
-        <div style={{padding:"11px 16px",borderBottom:`2px solid ${BORDER}`,background:"#1A2035"}}>
-          <div style={{fontWeight:600,fontSize:13}}>Cash Received</div>
-          <div style={{fontFamily:"'DM Mono',monospace",color:YELLOW,fontWeight:700,fontSize:14,marginTop:2}}>{fmt(cashReceived)}</div>
-        </div>
-
-        {items.map((item,i)=>{
-          const runningTotal = cashReceived - items.slice(0,i+1).reduce((s,x)=>s+x.value,0);
-          const isEditing = editingId===item.id;
-          return (
-            <div key={item.id} style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,background:isEditing?"#131C2A":"transparent"}}>
-              {isEditing?(
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  <input value={item.label} onChange={e=>updItem(item.id,"label",e.target.value)} style={fieldStyle} placeholder="Item name" />
-                  <input value={item.category} onChange={e=>updItem(item.id,"category",e.target.value)} style={fieldStyle} placeholder="Category" />
-                  <input type="number" value={item.value} onChange={e=>updItem(item.id,"value",e.target.value)} style={{...fieldStyle,fontFamily:"'DM Mono',monospace"}} />
-                  <button onClick={()=>setEditingId(null)} style={{padding:"10px",borderRadius:8,border:`1px solid ${GREEN}`,background:`${GREEN}20`,color:GREEN,fontWeight:700,fontSize:13,cursor:"pointer"}}>Done</button>
-                </div>
-              ):(
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:3,height:38,borderRadius:2,background:item.color,flexShrink:0}}/>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontWeight:500,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.label}</div>
-                    <div style={{fontSize:11,color:MUTED}}>{item.category}</div>
-                    <div style={{display:"flex",gap:8,marginTop:2,flexWrap:"wrap"}}>
-                      <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontSize:12,fontWeight:600}}>−{fmt(item.value).replace("SGD ","")}</span>
-                      <span style={{color:MUTED,fontSize:11}}>{pct(item.value)}</span>
-                      <span style={{fontFamily:"'DM Mono',monospace",color:runningTotal<0?RED:MUTED,fontSize:11}}>→ {fmt(runningTotal)}</span>
-                    </div>
-                  </div>
-                  <div style={{display:"flex",gap:6,flexShrink:0}}>
-                    <button onClick={()=>setEditingId(item.id)} style={{background:BORDER,border:"none",borderRadius:7,width:32,height:32,color:MUTED,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
-                    <button onClick={()=>removeItem(item.id)} style={{background:BORDER,border:"none",borderRadius:7,width:32,height:32,color:MUTED,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        <div style={{padding:"11px 16px",borderBottom:`2px solid ${BORDER}`,background:"#16111A",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontSize:12,color:MUTED,fontStyle:"italic"}}>Total set-asides</span>
-          <span style={{fontFamily:"'DM Mono',monospace",color:RED,fontWeight:700,fontSize:13}}>−{fmt(totalSetAside).replace("SGD ","")}</span>
-        </div>
-
-        {adding?(
-          <div style={{padding:"14px 16px"}}>
-            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:12}}>
-              <input placeholder="Item name *" value={newLabel} onChange={e=>setNewLabel(e.target.value)} style={fieldStyle} autoFocus />
-              <input placeholder="Category" value={newCat} onChange={e=>setNewCat(e.target.value)} style={fieldStyle} />
-              <input type="number" placeholder="Amount (SGD) *" value={newVal} onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addItem()} style={{...fieldStyle,fontFamily:"'DM Mono',monospace"}} />
-            </div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={addItem} style={{flex:1,padding:"12px",borderRadius:8,border:"none",background:GREEN,color:"#0F1117",fontWeight:700,fontSize:14,cursor:"pointer"}}>Add</button>
-              <button onClick={()=>{setAdding(false);setNewLabel("");setNewCat("");setNewVal("");}} style={{padding:"12px 16px",borderRadius:8,border:`1px solid ${BORDER}`,background:"none",color:MUTED,fontSize:14,cursor:"pointer"}}>Cancel</button>
-            </div>
-          </div>
-        ):(
-          <button onClick={()=>setAdding(true)} style={{width:"100%",background:"none",border:"none",padding:"12px 16px",color:MUTED,fontSize:13,cursor:"pointer",textAlign:"left"}}>+ Add set-aside</button>
-        )}
-      </div>
-
-      {/* Breakdown bar */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:"13px 16px",marginBottom:8}}>
-        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Breakdown</div>
-        <div style={{height:12,borderRadius:6,overflow:"hidden",display:"flex",background:BORDER}}>
-          {[...items,{label:"Investment",value:Math.max(remaining,0),color:GREEN}].map(item=>(
-            <div key={item.label} style={{width:`${Math.max(cashReceived>0?(item.value/cashReceived)*100:0,0)}%`,background:item.color,height:"100%",transition:"width 0.3s ease"}}/>
-          ))}
-        </div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:"5px 14px",marginTop:9}}>
-          {[...items,{label:"Investment",value:Math.max(remaining,0),color:GREEN}].map(item=>(
-            <div key={item.label} style={{display:"flex",alignItems:"center",gap:5,fontSize:11}}>
-              <div style={{width:7,height:7,borderRadius:"50%",background:item.color}}/>
-              <span style={{color:MUTED}}>{item.label}</span>
-              <span style={{color:TEXT,fontFamily:"'DM Mono',monospace"}}>{pct(item.value)}</span>
-            </div>
-          ))}
-        </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="section-meta" id="us-meta">—</span>
+        <button class="action-btn" onclick="openModal('buy','us')">+ Add Transaction</button>
       </div>
     </div>
-  );
-}
-
-function YearSummary({bonuses}) {
-  const totalCash     = bonuses.reduce((s,b)=>s+b.cashReceived, 0);
-  const totalSetAside = bonuses.reduce((s,b)=>s+b.items.reduce((x,i)=>x+i.value,0), 0);
-  const totalInvest   = Math.max(totalCash - totalSetAside, 0);
-
-  // Aggregate set-aside items by category across all bonuses
-  const catMap = {};
-  bonuses.forEach(b => b.items.forEach(item => {
-    const key = item.category||"Other";
-    if (!catMap[key]) catMap[key] = {total:0, color:item.color};
-    catMap[key].total += item.value;
-  }));
-  const cats = Object.entries(catMap).sort((a,b)=>b[1].total-a[1].total);
-
-  // SVG donut chart
-  const DonutChart = () => {
-    if (totalCash <= 0) return null;
-    const cx=100, cy=100, r=72, stroke=28;
-    const circumference = 2 * Math.PI * r;
-    const segments = [
-      ...cats.map(([label,{total,color}])=>({label, value:total, color})),
-      {label:"Investment", value:totalInvest, color:GREEN},
-    ].filter(s=>s.value>0);
-    let offset = 0;
-    const gap = 1.5; // degrees gap between segments
-    return (
-      <svg viewBox="0 0 200 200" style={{width:180,height:180,display:"block",margin:"0 auto"}}>
-        {segments.map((seg,i)=>{
-          const pct = seg.value / totalCash;
-          const dashLen = Math.max((pct * circumference) - (gap/360*circumference), 0);
-          const dashOffset = -offset * circumference;
-          offset += pct;
-          return (
-            <circle key={i} cx={cx} cy={cy} r={r}
-              fill="none" stroke={seg.color} strokeWidth={stroke}
-              strokeDasharray={`${dashLen} ${circumference - dashLen}`}
-              strokeDashoffset={dashOffset}
-              style={{transform:"rotate(-90deg)",transformOrigin:"100px 100px",transition:"stroke-dasharray 0.5s ease"}}
-            />
-          );
-        })}
-        {/* Centre text */}
-        <text x={cx} y={cy-8} textAnchor="middle" fill="#7A8099" fontSize="10" fontFamily="DM Sans">Total Cash</text>
-        <text x={cx} y={cy+8} textAnchor="middle" fill="#E8EAF0" fontSize="13" fontWeight="700" fontFamily="DM Mono">{fmt(totalCash).replace("SGD ","")}</text>
-        <text x={cx} y={cy+22} textAnchor="middle" fill="#5BC8A0" fontSize="10" fontFamily="DM Sans">SGD</text>
-      </svg>
-    );
-  };
-
-  return (
-    <div>
-      {/* Donut chart card */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px",marginBottom:12}}>
-        <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:14}}>2026 Bonus Overview</div>
-        <DonutChart />
-
-        {/* Legend */}
-        <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
-          {[...cats.map(([label,{total,color}])=>({label,value:total,color})),
-            {label:"Available to Invest",value:totalInvest,color:GREEN}
-          ].map(({label,value,color})=>(
-            <div key={label} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <div style={{width:10,height:10,borderRadius:"50%",background:color,flexShrink:0}}/>
-                <span style={{fontSize:13,color:MUTED}}>{label}</span>
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:11,color:MUTED}}>{totalCash>0?((value/totalCash)*100).toFixed(0):0}%</span>
-                <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:600,color:TEXT}}>{fmt(value)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Totals footer */}
-        <div style={{borderTop:`1px solid ${BORDER}`,marginTop:12,paddingTop:12,display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{display:"flex",justifyContent:"space-between"}}>
-            <span style={{fontSize:12,color:MUTED}}>Total Cash Received</span>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:YELLOW}}>{fmt(totalCash)}</span>
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between"}}>
-            <span style={{fontSize:12,color:MUTED}}>Total Set-asides</span>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:RED}}>−{fmt(totalSetAside).replace("SGD ","")}</span>
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between"}}>
-            <span style={{fontSize:12,color:GREEN,fontWeight:600}}>Available to Invest</span>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,color:GREEN}}>{fmt(totalInvest)}</span>
-          </div>
-        </div>
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Symbol</th><th>Qty</th>
+            <th>Avg Cost (USD)</th><th>Current Price</th><th>Mkt Value (USD)</th><th>Mkt Value (SGD)</th>
+            <th class="col-divider">Unreal. P&amp;L (USD)</th><th>Unreal. P&amp;L (SGD)</th>
+            <th>P&amp;L %</th><th class="col-divider">Portfolio Wt.</th>
+          </tr></thead>
+          <tbody id="us-body"></tbody>
+          <tfoot><tr id="us-total"></tr></tfoot>
+        </table>
       </div>
-
-      {/* Combined set-asides by category */}
-      {cats.length>0&&(
-        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:8}}>
-          <div style={{padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,fontSize:10,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em"}}>
-            Combined Set-asides by Category
-          </div>
-          {cats.map(([cat,{total,color}],i)=>{
-            const barPct = totalCash>0?(total/totalCash)*100:0;
-            return (
-              <div key={cat} style={{padding:"12px 16px",borderBottom:i<cats.length-1?`1px solid ${BORDER}`:"none"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{width:8,height:8,borderRadius:"50%",background:color}}/>
-                    <span style={{fontSize:13,color:MUTED}}>{cat}</span>
-                  </div>
-                  <div>
-                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:600,color:TEXT}}>{fmt(total)}</span>
-                    <span style={{fontSize:11,color:MUTED,marginLeft:6}}>{barPct.toFixed(0)}%</span>
-                  </div>
-                </div>
-                <div style={{height:4,borderRadius:2,background:BORDER,overflow:"hidden"}}>
-                  <div style={{width:`${barPct}%`,height:"100%",background:color,borderRadius:2,transition:"width 0.4s ease"}}/>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <div class="footnote">US prices via Twelve Data (15-min delay). SG stock prices are snapshot values. FX rate live from Twelve Data.</div>
     </div>
-  );
-}
+  </div>
 
-function BonusAllocation() {
-  const [bonuses, setBonuses] = useState(() => {
-    try { const s=lsGet("bonus-allocation-v2"); return s?JSON.parse(s):DEFAULT_BONUSES; } catch { return DEFAULT_BONUSES; }
-  });
-  const [activeId, setActiveId]       = useState("summary");
-  const [addingBonus, setAddingBonus] = useState(false);
-  const [newType, setNewType]         = useState("cash");
-  const [newBonusName, setNewBonusName]   = useState("");
-  const [newBonusMonth, setNewBonusMonth] = useState("");
-  const [newCashReceived, setNewCashReceived] = useState("");
-  const [newRsuUnits, setNewRsuUnits] = useState("");
-  const [newRsuPrice, setNewRsuPrice] = useState("");
-
-  useEffect(()=>{ try { lsSet("bonus-allocation-v2", JSON.stringify(bonuses)); } catch {} }, [bonuses]);
-
-  const updateBonus = (updated) => setBonuses(prev=>prev.map(b=>b.id===updated.id?updated:b));
-  const deleteBonus = (id) => { setBonuses(prev=>prev.filter(b=>b.id!==id)); setActiveId("summary"); };
-
-  const resetNewForm = () => { setNewBonusName(""); setNewBonusMonth(""); setNewCashReceived(""); setNewRsuUnits(""); setNewRsuPrice(""); setNewType("cash"); setAddingBonus(false); };
-
-  const createBonus = () => {
-    if (!newBonusName.trim()) return;
-    const nb = {
-      id: Date.now(),
-      name: newBonusName.trim(),
-      month: newBonusMonth.trim() || "2026",
-      type: newType,
-      cashReceived: parseFloat(newCashReceived) || 0,
-      rsuUnits: parseFloat(newRsuUnits) || 0,
-      rsuPrice: parseFloat(newRsuPrice) || 0,
-      grossBonus: 0, salary: 0, multiplier: 0,
-      items: [],
-    };
-    setBonuses(prev=>[...prev,nb]);
-    setActiveId(nb.id);
-    resetNewForm();
-  };
-
-  const tabs = [{id:"summary",label:"📊 Year",color:BLUE}, ...bonuses.map(b=>({id:b.id,label:b.name,color:b.type==="rsu"?PURPLE:YELLOW}))];
-  const activeBonus = bonuses.find(b=>b.id===activeId);
-
-  const fs = {background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,color:TEXT,fontSize:15,padding:"10px 12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box",width:"100%"};
-  const newGrossRSU = (parseFloat(newRsuUnits)||0) * (parseFloat(newRsuPrice)||0);
-
-  return (
-    <div style={{padding:"16px 16px 8px"}}>
-
-      {/* Horizontal scroll tabs */}
-      <div style={{display:"flex",gap:8,marginBottom:14,overflowX:"auto",paddingBottom:4,WebkitOverflowScrolling:"touch"}}>
-        {tabs.map(t=>(
-          <button key={t.id} onClick={()=>setActiveId(t.id)} style={{
-            flexShrink:0,padding:"8px 14px",borderRadius:20,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12,whiteSpace:"nowrap",
-            border:`1px solid ${activeId===t.id?t.color:BORDER}`,
-            background:activeId===t.id?`${t.color}18`:"none",
-            color:activeId===t.id?t.color:MUTED,
-          }}>{t.label}</button>
-        ))}
-        <button onClick={()=>setAddingBonus(p=>!p)} style={{
-          flexShrink:0,padding:"8px 14px",borderRadius:20,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12,
-          border:`1px solid ${addingBonus?GREEN:BORDER}`,background:addingBonus?`${GREEN}18`:"none",color:addingBonus?GREEN:MUTED,
-        }}>+ Add</button>
+  <!-- SG STOCKS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-dot" style="background:var(--sg);box-shadow:0 0 8px rgba(255,179,71,0.5)"></span>
+        SG Stocks &amp; REITs
       </div>
-
-      {/* Add bonus form */}
-      {addingBonus&&(
-        <div style={{background:CARD,border:`1px solid ${GREEN}44`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
-          <div style={{fontSize:13,fontWeight:600,color:GREEN,marginBottom:12}}>New Bonus</div>
-
-          {/* Type selector — shown first */}
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Bonus Type</div>
-            <div style={{display:"flex",gap:8}}>
-              {[{id:"cash",label:"💵 Cash Bonus"},{id:"rsu",label:"📈 RSU Vest"}].map(t=>(
-                <button key={t.id} onClick={()=>setNewType(t.id)} style={{
-                  flex:1,padding:"10px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,
-                  border:`1px solid ${newType===t.id?(t.id==="rsu"?PURPLE:YELLOW):BORDER}`,
-                  background:newType===t.id?`${t.id==="rsu"?PURPLE:YELLOW}18`:"none",
-                  color:newType===t.id?(t.id==="rsu"?PURPLE:YELLOW):MUTED,
-                }}>{t.label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Name & month */}
-          <div style={{marginBottom:10}}>
-            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Bonus name *</div>
-            <input placeholder={newType==="rsu"?"e.g. Acme RSU Vest":"e.g. Mid-year Bonus"} value={newBonusName} onChange={e=>setNewBonusName(e.target.value)} style={fs} autoFocus />
-          </div>
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Month received</div>
-            <input placeholder="e.g. October" value={newBonusMonth} onChange={e=>setNewBonusMonth(e.target.value)} style={fs} />
-          </div>
-
-          {/* RSU fields */}
-          {newType==="rsu"&&(
-            <div style={{background:"#13102A",border:`1px solid ${PURPLE}33`,borderRadius:10,padding:"12px",marginBottom:12}}>
-              <div style={{fontSize:11,color:PURPLE,fontWeight:600,marginBottom:10}}>📈 RSU Details</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-                <div>
-                  <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Units Vested</div>
-                  <input type="number" inputMode="decimal" placeholder="0" value={newRsuUnits} onChange={e=>setNewRsuUnits(e.target.value)} style={{...fs,fontFamily:"'DM Mono',monospace"}} />
-                </div>
-                <div>
-                  <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Price / Unit (SGD)</div>
-                  <input type="number" inputMode="decimal" placeholder="0.00" value={newRsuPrice} onChange={e=>setNewRsuPrice(e.target.value)} style={{...fs,fontFamily:"'DM Mono',monospace"}} />
-                </div>
-              </div>
-              {newGrossRSU>0&&(
-                <div style={{display:"flex",justifyContent:"space-between",padding:"8px 10px",background:"#0A0D14",borderRadius:8}}>
-                  <span style={{fontSize:12,color:MUTED}}>Gross RSU Value</span>
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,color:PURPLE}}>{fmt(newGrossRSU)}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Cash received */}
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>Cash Received after Tax (SGD)</div>
-            <input type="number" inputMode="decimal" placeholder="0.00" value={newCashReceived} onChange={e=>setNewCashReceived(e.target.value)} style={{...fs,fontFamily:"'DM Mono',monospace"}} />
-            {newType==="rsu"&&newGrossRSU>0&&parseFloat(newCashReceived)>0&&(
-              <div style={{fontSize:11,color:MUTED,marginTop:5}}>
-                Tax withheld: <span style={{color:RED,fontFamily:"'DM Mono',monospace"}}>{fmt(newGrossRSU-parseFloat(newCashReceived))}</span>
-                <span style={{marginLeft:8}}>({(((newGrossRSU-parseFloat(newCashReceived))/newGrossRSU)*100).toFixed(1)}%)</span>
-              </div>
-            )}
-          </div>
-
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={createBonus} style={{flex:1,padding:"11px",borderRadius:8,border:"none",background:GREEN,color:"#0F1117",fontWeight:700,fontSize:14,cursor:"pointer"}}>Create</button>
-            <button onClick={resetNewForm} style={{padding:"11px 16px",borderRadius:8,border:`1px solid ${BORDER}`,background:"none",color:MUTED,fontSize:14,cursor:"pointer"}}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      {/* Summary view */}
-      {activeId==="summary" && <YearSummary bonuses={bonuses} />}
-
-      {/* Individual bonus view */}
-      {activeBonus && (
-        <>
-          <BonusDetail bonus={activeBonus} onChange={updateBonus} />
-          {bonuses.length>1&&(
-            <button onClick={()=>{if(window.confirm(`Delete "${activeBonus.name}"? This cannot be undone.`))deleteBonus(activeBonus.id);}}
-              style={{width:"100%",background:"none",border:`1px solid ${RED}44`,borderRadius:8,padding:"10px",color:RED,fontSize:12,cursor:"pointer",fontFamily:"inherit",marginTop:4,marginBottom:8}}>
-              🗑 Delete {activeBonus.name}
-            </button>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-// ─── MONTHLY BUDGET TRACKER ──────────────────────────────────────────────────
-
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-const FLEX_CATS = [
-  {id:"food",     label:"Food & Groceries",                      icon:"🍜"},
-  {id:"beauty",   label:"Beauty",                                icon:"💅"},
-  {id:"shopping", label:"Shopping",                              icon:"🛍️"},
-  {id:"home_ent", label:"Home, Entertainment, Sports, Personal", icon:"🎮"},
-  {id:"cab",      label:"Cab",                                   icon:"🚕"},
-  {id:"gifts",    label:"Gifts",                                 icon:"🎁"},
-];
-
-// Built-in defaults — flex is derived automatically
-const DEFAULT_BUDGET = (m) => ({
-  income:    11420,
-  rent:      1807.28,
-  tax:       m <= 3 ? 1354 : 1410,
-  insurance: 540,
-  nonneg:    571.12,
-  gym:       463,
-  travel:    800,
-  savings:   3600,
-  extra:     0,
-  interest:  0,
-});
-const calcFlex = (b) => Math.round((b.income + b.extra + (b.interest||0) - b.rent - b.tax - b.insurance - b.nonneg - b.gym - b.travel - b.savings) * 100) / 100;
-
-// Carry-forward: find effective budget for a month by applying all overrides
-// from month 0 up to monthIdx in order (later overrides win)
-const getEffectiveBudget = (overrides, monthIdx) => {
-  const base = DEFAULT_BUDGET(monthIdx);
-  for (let m = 0; m <= monthIdx; m++) {
-    if (overrides[m]) Object.assign(base, overrides[m]);
-  }
-  return base;
-};
-
-const BUDGET_ROWS = [
-  {id:"income",    label:"Income",            icon:"💵", color:"#5BC8A0", isIncome:true},
-  {id:"extra",     label:"Extra Income",      icon:"🎉", color:"#5BC8A0", isIncome:true, hint:"Windfalls, bonuses, one-offs"},
-  {id:"interest",  label:"Bank Interest",     icon:"🏦", color:"#5BC8A0", isIncome:true, hint:"Interest from savings accounts"},
-  {id:"rent",      label:"Rent",              icon:"🏠", color:"#A78BD4"},
-  {id:"tax",       label:"Income Tax",        icon:"📋", color:"#E8547A"},
-  {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#5B8DB8"},
-  {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#5BC8A0", hint:"Utilities · Parents · Transport · Digital Subs"},
-  {id:"gym",       label:"Gym",               icon:"🏋️", color:"#E8C547"},
-  {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#F4845F"},
-  {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#5B8DB8"},
-];
-
-const initSpending = () => {
-  const d = {};
-  for (let m = 0; m < 12; m++) d[m] = {food:"",beauty:"",shopping:"",home_ent:"",cab:"",gifts:""};
-  return d;
-};
-
-
-function InterestTracker({monthIdx, spending, setSpending, setBudgetVal}) {
-  const spendData  = spending[monthIdx] || {};
-  const [expr, setExpr] = useState(spendData.interest_expr || "");
-  const [total, setTotal] = useState(parseFloat(spendData.interest_total)||0);
-
-  const evaluate = (raw) => {
-    setExpr(raw);
-    try {
-      // Allow only digits, spaces, + - * / . ( )
-      const safe = raw.replace(/[^0-9+\-*\/.()\s]/g,"");
-      // eslint-disable-next-line no-new-func
-      const result = safe.trim() ? Math.max(0, parseFloat(Function('"use strict";return ('+safe+')')()) || 0) : 0;
-      const rounded = Math.round(result*100)/100;
-      setTotal(rounded);
-      setBudgetVal("interest", rounded);
-      setSpending(prev=>({...prev,[monthIdx]:{...(prev[monthIdx]||{}),interest_expr:raw,interest_total:rounded}}));
-    } catch {}
-  };
-
-  return (
-    <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"13px 16px",marginBottom:12}}>
-      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
-        <span style={{fontSize:15}}>🏦</span>
-        <span style={{fontSize:13,fontWeight:600,color:GREEN}}>Bank Interest</span>
-        <span style={{fontSize:10,color:MUTED,marginLeft:2}}>e.g. 12.50 + 8.30 + 44</span>
-      </div>
-      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <input
-          value={expr}
-          onChange={e=>evaluate(e.target.value)}
-          placeholder="12.50 + 8.30 + 44"
-          style={{flex:1,background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,
-            color:TEXT,fontSize:14,padding:"9px 11px",fontFamily:"'DM Mono',monospace",outline:"none"}}
-        />
-        <div style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:GREEN,
-          flexShrink:0,minWidth:90,textAlign:"right"}}>
-          = {fmt(total).replace("SGD ","")}
-        </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="section-meta" id="sg-meta">—</span>
+        <button class="action-btn" onclick="openModal('buy','sg')">+ Add Transaction</button>
+        <button class="action-btn accent" onclick="openModal('div','sg')">+ Log Dividend</button>
       </div>
     </div>
-  );
-}
-
-function MonthlyTracker() {
-  const [monthIdx,  setMonthIdx]  = useState(new Date().getMonth());
-  const [activeTab, setActiveTab] = useState("spending");
-
-  const [overrides, setOverrides] = useState(() => {
-    try { const s = lsGet("budget-overrides"); return s ? JSON.parse(s) : {}; } catch { return {}; }
-  });
-  const [spending, setSpending] = useState(() => {
-    try { const s = lsGet("monthly-tracker"); return s ? JSON.parse(s) : initSpending(); } catch { return initSpending(); }
-  });
-
-  useEffect(() => { try { lsSet("budget-overrides", JSON.stringify(overrides)); } catch {} }, [overrides]);
-  useEffect(() => { try { lsSet("monthly-tracker",  JSON.stringify(spending));  } catch {} }, [spending]);
-
-  const budget     = getEffectiveBudget(overrides, monthIdx);
-  const flexBudget = calcFlex(budget);
-  const spendData  = spending[monthIdx] || {};
-  const isModified = !!overrides[monthIdx];
-
-  // Update budget: stores override on this month only; carry-forward happens via getEffectiveBudget
-  const setBudgetVal = (id, raw) => {
-    const val = parseFloat(raw);
-    if (isNaN(val) || val < 0) return;
-    setOverrides(prev => ({...prev, [monthIdx]: {...(prev[monthIdx]||{}), [id]: val}}));
-  };
-  const setSpendVal = (id, val) => setSpending(prev => ({...prev, [monthIdx]: {...(prev[monthIdx]||{}), [id]: val}}));
-
-  const totalSpent = FLEX_CATS.reduce((s,c) => s + (parseFloat(spendData[c.id])||0), 0);
-  const totalLeft  = flexBudget - totalSpent;
-  const anySpend   = FLEX_CATS.some(c => parseFloat(spendData[c.id]) > 0);
-  const pctUsed    = flexBudget > 0 ? Math.min((totalSpent/flexBudget)*100, 100) : 0;
-
-  const inp = (val, onChange, color) => (
-    <input type="number" inputMode="decimal" value={val} onChange={e=>onChange(e.target.value)}
-      style={{background:"#0A0D14",border:`1px solid #252A3A`,borderRadius:8,color:color||"#E8EAF0",
-        fontSize:15,fontFamily:"'DM Mono',monospace",padding:"8px 10px",width:128,textAlign:"right",outline:"none",flexShrink:0}} />
-  );
-
-  return (
-    <div style={{padding:"16px 16px 8px"}}>
-
-      {/* Month selector */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,background:"#181C27",borderRadius:12,padding:"12px 16px",border:"1px solid #252A3A"}}>
-        <button onClick={()=>setMonthIdx(m=>Math.max(0,m-1))} style={{background:"none",border:"1px solid #252A3A",borderRadius:8,width:38,height:38,color:"#E8EAF0",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
-        <div style={{textAlign:"center"}}>
-          <div style={{fontWeight:700,fontSize:20}}>{MONTHS[monthIdx]} 2026</div>
-          <div style={{marginTop:4,minHeight:18}}>
-            {isModified
-              ? <span style={{fontSize:10,color:"#E8C547",background:"#E8C54718",padding:"2px 8px",borderRadius:10}}>✎ Budget edited</span>
-              : <span style={{fontSize:11,color:"#7A8099"}}>Default budget</span>}
-          </div>
-        </div>
-        <button onClick={()=>setMonthIdx(m=>Math.min(11,m+1))} style={{background:"none",border:"1px solid #252A3A",borderRadius:8,width:38,height:38,color:"#E8EAF0",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
-      </div>
-
-      {/* Tab switcher */}
-      <div style={{display:"flex",gap:8,marginBottom:12}}>
-        {[{id:"spending",label:"💸 Spending"},{id:"budget",label:"⚙️ Budget"}].map(t=>(
-          <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{
-            flex:1,padding:"10px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,
-            border:`1px solid ${activeTab===t.id?"#E8C547":"#252A3A"}`,
-            background:activeTab===t.id?"#E8C54718":"none",
-            color:activeTab===t.id?"#E8C547":"#7A8099",
-          }}>{t.label}</button>
-        ))}
-      </div>
-
-      {/* ── SPENDING TAB ── */}
-      {activeTab==="spending" && <>
-
-        {/* Flex summary */}
-        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"16px",marginBottom:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:12}}>
-            <div>
-              <div style={{fontSize:11,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Flexible Spending</div>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:28,fontWeight:700,color:totalSpent>flexBudget?"#E85454":"#E8EAF0"}}>{fmt(totalSpent)}</div>
-              <div style={{fontSize:12,color:"#7A8099",marginTop:3}}>of <span style={{fontFamily:"'DM Mono',monospace",color:"#E8EAF0"}}>{fmt(flexBudget)}</span> budget</div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:11,color:"#7A8099",marginBottom:3}}>Remaining</div>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:20,fontWeight:700,color:totalLeft>=0?"#5BC8A0":"#E85454"}}>
-                {totalLeft>=0?fmt(totalLeft):`−${fmt(Math.abs(totalLeft))}`}
-              </div>
-            </div>
-          </div>
-          <div style={{height:8,borderRadius:4,background:"#252A3A",overflow:"hidden"}}>
-            <div style={{width:`${pctUsed}%`,height:"100%",borderRadius:4,transition:"width 0.4s ease",
-              background:totalSpent>flexBudget?"#E85454":pctUsed>85?"#F4845F":"#5BC8A0"}}/>
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"#7A8099"}}>
-            <span>SGD 0</span><span>{Math.round(pctUsed)||0}% used</span><span>{fmt(flexBudget)}</span>
-          </div>
-        </div>
-
-        {/* Spending rows */}
-        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
-          <div style={{padding:"10px 16px",borderBottom:"1px solid #252A3A",fontSize:10,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",justifyContent:"space-between"}}>
-            <span>Category</span><span>Spent this month</span>
-          </div>
-          {FLEX_CATS.map((cat,i)=>{
-            const spent = parseFloat(spendData[cat.id])||0;
-            const sharePct = totalSpent>0?Math.round((spent/totalSpent)*100):0;
-            return (
-              <div key={cat.id} style={{padding:"12px 16px",borderBottom:i<FLEX_CATS.length-1?"1px solid #252A3A":"none",display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:16,flexShrink:0}}>{cat.icon}</span>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:500,marginBottom:4}}>{cat.label}</div>
-                  <div style={{height:4,borderRadius:2,background:"#252A3A",overflow:"hidden"}}>
-                    <div style={{width:`${sharePct}%`,height:"100%",background:"#E8C547",borderRadius:2,transition:"width 0.3s ease"}}/>
-                  </div>
-                  {spent>0&&<div style={{fontSize:10,color:"#7A8099",marginTop:3}}>{sharePct}% of flex spending</div>}
-                </div>
-                {inp(spendData[cat.id]||"", v=>setSpendVal(cat.id,v))}
-              </div>
-            );
-          })}
-          <div style={{padding:"12px 16px",background:"#13161F",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"2px solid #252A3A"}}>
-            <span style={{fontSize:13,fontWeight:700}}>Total Spent</span>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:totalSpent>flexBudget?"#E85454":"#E8EAF0"}}>{fmt(totalSpent)}</span>
-          </div>
-        </div>
-
-        {/* Spending pie chart */}
-        {(()=>{
-          const fixedRows = [
-            {id:"rent",      label:"Rent",              icon:"🏠", color:"#A78BD4", budgeted:budget.rent},
-            {id:"tax",       label:"Income Tax",        icon:"📋", color:"#E8547A", budgeted:budget.tax},
-            {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#5B8DB8", budgeted:budget.insurance},
-            {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#5BC8A0", budgeted:budget.nonneg},
-            {id:"gym",       label:"Gym",               icon:"🏋️", color:"#E8C547", budgeted:budget.gym},
-            {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#E07B4F", budgeted:budget.travel},
-            {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#7EC8C8", budgeted:budget.savings},
-          ];
-          const flexActual = FLEX_CATS.reduce((s,c)=>s+(parseFloat(spendData[c.id])||0),0);
-          const flexPieVal = flexActual>0 ? flexActual : flexBudget;
-          const flexIsActual = flexActual>0;
-          const allCats = [
-            ...fixedRows.map(row => {
-              const actual = spendData[`${row.id}_actual`];
-              const hasActual = actual !== "" && actual !== undefined && !isNaN(parseFloat(actual));
-              return {...row, value: hasActual ? parseFloat(actual) : row.budgeted, isActual: hasActual};
-            }),
-            {id:"flex", label:"Flexible Spending", icon:"🛍️", color:PALETTE[4], value:flexPieVal, isActual:flexIsActual, isFlex:true},
-          ].filter(c=>c.value>0);
-          const grandTotal = allCats.reduce((s,c)=>s+c.value, 0);
-          if (grandTotal===0) return null;
-          const cx=100, cy=100, r=72, stroke=32, circ=2*Math.PI*r;
-          let offset=0;
-          return (
-            <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"14px 16px",marginBottom:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:11,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em"}}>Monthly Breakdown</div>
-                <div style={{fontSize:10,color:"#7A8099"}}>◉ actual &nbsp;○ budgeted</div>
-              </div>
-              <svg viewBox="0 0 200 200" style={{width:180,height:180,display:"block",margin:"0 auto"}}>
-                {allCats.map(cat=>{
-                  const pct = cat.value/grandTotal;
-                  const dash = Math.max(pct*circ - 1.5, 0);
-                  const off = -offset*circ;
-                  offset += pct;
-                  return <circle key={cat.id} cx={cx} cy={cy} r={r} fill="none" stroke={cat.color}
-                    strokeWidth={stroke} strokeDasharray={`${dash} ${circ-dash}`} strokeDashoffset={off}
-                    opacity={cat.isActual ? 1 : 0.45}
-                    style={{transform:"rotate(-90deg)",transformOrigin:"100px 100px",transition:"stroke-dasharray 0.4s ease"}}/>;
-                })}
-                <text x={cx} y={cy-8} textAnchor="middle" fill="#7A8099" fontSize="10" fontFamily="DM Sans">Total</text>
-                <text x={cx} y={cy+8} textAnchor="middle" fill="#E8EAF0" fontSize="12" fontWeight="700" fontFamily="DM Mono">{fmt(grandTotal).replace("SGD ","")}</text>
-                <text x={cx} y={cy+22} textAnchor="middle" fill="#7A8099" fontSize="10" fontFamily="DM Sans">SGD</text>
-              </svg>
-              <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:7}}>
-                {allCats.map(cat=>(
-                  <div key={cat.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",opacity:cat.isActual?1:0.6}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{width:10,height:10,borderRadius:"50%",background:cat.color,flexShrink:0,opacity:cat.isActual?1:0.5}}/>
-                      <span style={{fontSize:12,color:"#E8EAF0"}}>{cat.icon} {cat.label}</span>
-                      {!cat.isActual&&<span style={{fontSize:10,color:"#7A8099"}}>(budgeted)</span>}
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,marginLeft:8}}>
-                      <span style={{fontSize:11,color:"#7A8099"}}>{Math.round((cat.value/grandTotal)*100)}%</span>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,fontWeight:600}}>{fmt(cat.value)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Full month snapshot */}
-        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"14px 16px",marginBottom:8}}>
-          <div style={{fontSize:11,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>Full Month Snapshot</div>
-          {[
-            {label:"Income",           value:budget.income,    color:"#5BC8A0"},
-            ...(budget.extra>0?[{label:"🎉 Extra Income", value:budget.extra, color:"#5BC8A0"}]:[]),
-            ...(budget.interest>0?[{label:"🏦 Bank Interest", value:budget.interest, color:"#5BC8A0"}]:[]),
-            {label:"Rent",             value:budget.rent,      color:"#A78BD4"},
-            {label:"Income Tax",       value:budget.tax,       color:"#E8547A"},
-            {label:"Insurance",        value:budget.insurance, color:"#5B8DB8"},
-            {label:"Non-negotiables",  value:budget.nonneg,    color:"#5BC8A0"},
-            {label:"Gym",              value:budget.gym,       color:"#E8C547"},
-            {label:"Flexible Spending",value:flexBudget, actual:anySpend?totalSpent:null, color:"#F4845F"},
-            {label:"Travel Fund",      value:budget.travel,    color:"#F4845F"},
-            {label:"Savings & Invest.",value:budget.savings,   color:"#5B8DB8"},
-          ].map(({label,value,actual,color})=>(
-            <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
-              <div style={{display:"flex",alignItems:"center",gap:7,flex:1,minWidth:0}}>
-                <div style={{width:6,height:6,borderRadius:"50%",background:color,flexShrink:0}}/>
-                <span style={{fontSize:12,color:"#7A8099"}}>{label}</span>
-              </div>
-              <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
-                {actual!=null?(
-                  <span>
-                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:actual>value?"#E85454":"#5BC8A0"}}>{fmt(actual)}</span>
-                    <span style={{fontSize:10,color:"#7A8099"}}> / {fmt(value)}</span>
-                  </span>
-                ):(
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:(label==="Income"||label.includes("Extra Income")||label.includes("Bank Interest"))?"#5BC8A0":"#E8EAF0"}}>{fmt(value)}</span>
-                )}
-              </div>
-            </div>
-          ))}
-          <div style={{borderTop:"1px solid #252A3A",marginTop:6,paddingTop:10,display:"flex",justifyContent:"space-between"}}>
-            <span style={{fontSize:13,fontWeight:700}}>Total Income</span>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:"#5BC8A0"}}>{fmt(budget.income+(budget.extra||0)+(budget.interest||0))}</span>
-          </div>
-        </div>
-      </>}
-
-      {/* ── BUDGET TAB ── */}
-      {activeTab==="budget" && <>
-        <div style={{background:"#E8C54712",border:"1px solid #E8C54733",borderRadius:10,padding:"10px 14px",marginBottom:12,fontSize:12,color:"#7A8099",lineHeight:1.6}}>
-          ⚙️ Changes from <strong style={{color:"#E8EAF0"}}>{MONTHS[monthIdx]}</strong> carry forward to all later months automatically. Flexible spending adjusts to keep the budget balanced.
-        </div>
-
-        <InterestTracker monthIdx={monthIdx} spending={spending} setSpending={setSpending} setBudgetVal={setBudgetVal} />
-
-        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
-          {BUDGET_ROWS.filter(row=>row.id!=="interest").map((row,i,arr)=>(
-            <div key={row.id} style={{
-              padding:"13px 16px",
-              borderBottom:i<arr.length-1?"1px solid #252A3A":"none",
-              background:row.isIncome?"#0D1A140A":"none",
-              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
-            }}>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:row.hint?3:0}}>
-                  <span style={{fontSize:15}}>{row.icon}</span>
-                  <span style={{fontSize:13,fontWeight:600,color:row.color}}>{row.label}</span>
-                </div>
-                {row.hint&&<div style={{fontSize:10,color:"#7A8099",paddingLeft:22}}>{row.hint}</div>}
-              </div>
-              {inp(budget[row.id]||"", v=>setBudgetVal(row.id, v), row.isIncome?"#5BC8A0":undefined)}
-            </div>
-          ))}
-        </div>
-
-        {/* Derived flex result */}
-        <div style={{
-          background:flexBudget<0?"#1F0D10":"#0D1F18",
-          border:`1px solid ${flexBudget<0?"#E8545444":"#5BC8A044"}`,
-          borderRadius:12,padding:"14px 16px",marginBottom:12,
-          display:"flex",justifyContent:"space-between",alignItems:"center",
-        }}>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:flexBudget<0?"#E85454":"#5BC8A0"}}>🛍️ Flexible Spending Budget</div>
-            <div style={{fontSize:11,color:"#7A8099",marginTop:3}}>Auto-calculated · Income minus all expenses</div>
-            {flexBudget<0&&<div style={{fontSize:11,color:"#E85454",marginTop:4}}>⚠ Over by {fmt(Math.abs(flexBudget))} — reduce an expense above</div>}
-          </div>
-          <div style={{fontFamily:"'DM Mono',monospace",fontSize:22,fontWeight:700,color:flexBudget<0?"#E85454":"#5BC8A0",flexShrink:0,marginLeft:12}}>{fmt(flexBudget)}</div>
-        </div>
-
-        {/* Fixed actuals */}
-        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,overflow:"hidden",marginBottom:12}}>
-          <div style={{padding:"10px 16px",borderBottom:"1px solid #252A3A",fontSize:10,color:"#7A8099",textTransform:"uppercase",letterSpacing:"0.08em"}}>
-            Fixed Expense Actuals — for pie chart
-          </div>
-          <div style={{padding:"8px 16px",borderBottom:"1px solid #252A3A",fontSize:11,color:"#7A8099",lineHeight:1.5}}>
-            Enter what you actually spent. Leave blank to use the budgeted amount in the chart.
-          </div>
-          {[
-            {id:"rent",      label:"Rent",              icon:"🏠", color:"#A78BD4", budgeted:budget.rent},
-            {id:"tax",       label:"Income Tax",        icon:"📋", color:"#E8547A", budgeted:budget.tax},
-            {id:"insurance", label:"Insurance",         icon:"🛡️", color:"#5B8DB8", budgeted:budget.insurance},
-            {id:"nonneg",    label:"Non-negotiables",   icon:"📌", color:"#5BC8A0", budgeted:budget.nonneg},
-            {id:"gym",       label:"Gym",               icon:"🏋️", color:"#E8C547", budgeted:budget.gym},
-            {id:"travel",    label:"Travel Fund",       icon:"✈️", color:"#F4845F", budgeted:budget.travel},
-            {id:"savings",   label:"Savings & Invest.", icon:"📈", color:"#5B8DB8", budgeted:budget.savings},
-          ].map((row,i,arr)=>{
-            const rawActual = spendData[`${row.id}_actual`];
-            const hasActual = rawActual !== "" && rawActual !== undefined && !isNaN(parseFloat(rawActual));
-            const actual = hasActual ? parseFloat(rawActual) : null;
-            const diff = hasActual ? actual - row.budgeted : 0;
-            return (
-              <div key={row.id} style={{padding:"11px 16px",borderBottom:i<arr.length-1?"1px solid #252A3A":"none",display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:3,height:36,borderRadius:2,background:row.color,flexShrink:0}}/>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:500}}>{row.icon} {row.label}</div>
-                  <div style={{fontSize:10,color:"#7A8099",marginTop:2}}>
-                    Budgeted: <span style={{fontFamily:"'DM Mono',monospace",color:"#E8EAF0"}}>{fmt(row.budgeted)}</span>
-                    {hasActual && diff!==0 && <span style={{marginLeft:6,color:diff>0?"#E85454":"#5BC8A0"}}>{diff>0?"↑":"↓"} {fmt(Math.abs(diff)).replace("SGD ","")}</span>}
-                  </div>
-                </div>
-                <input type="number" inputMode="decimal"
-                  placeholder={fmt(row.budgeted).replace("SGD ","")}
-                  value={rawActual||""}
-                  onChange={e=>setSpendVal(`${row.id}_actual`, e.target.value)}
-                  style={{background:"#0A0D14",border:`1px solid #252A3A`,borderRadius:8,
-                    color:hasActual&&diff>0?"#E85454":hasActual&&diff<0?"#5BC8A0":"#E8EAF0",
-                    fontSize:14,fontFamily:"'DM Mono',monospace",padding:"8px 10px",width:128,textAlign:"right",outline:"none",flexShrink:0}}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Reset this month */}
-        {isModified&&(
-          <button onClick={()=>{
-            if(window.confirm(`Reset ${MONTHS[monthIdx]}'s budget to default?\n\nThis only affects ${MONTHS[monthIdx]} — earlier months and later months that inherited from here will re-compute from the previous override or default.`)){
-              setOverrides(prev=>{const n={...prev};delete n[monthIdx];return n;});
-            }
-          }} style={{width:"100%",background:"none",border:"1px solid #252A3A",borderRadius:8,padding:"10px",color:"#7A8099",fontSize:12,cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
-            ↩ Reset {MONTHS[monthIdx]} to inherited default
-          </button>
-        )}
-      </>}
-
-    </div>
-  );
-}
-
-
-// ─── APP SHELL ───────────────────────────────────────────────────────────────
-const TABS = [
-  {id:"monthly", label:"Monthly",      icon:"📅"},
-  {id:"sinking", label:"Sinking Funds",icon:"🪣"},
-  {id:"bonus",   label:"Bonus",        icon:"💰"},
-  {id:"settings",label:"Backup",       icon:"💾"},
-];
-
-function BackupRestore() {
-  const [imported, setImported] = useState(false);
-  const [error, setError] = useState("");
-  const [syncStatus, setSyncStatusLocal] = useState(getSyncStatus());
-
-  useEffect(() => {
-    const unsub = onSyncStatus(s => setSyncStatusLocal(s));
-    return unsub;
-  }, []);
-
-  const exportData = () => {
-    const data = {
-      version: "1.7.0",
-      exported: new Date().toISOString(),
-      "monthly-tracker":    lsGet("monthly-tracker"),
-      "budget-overrides":   lsGet("budget-overrides"),
-      "sf-funds":           lsGet("sf-funds"),
-      "bonus-allocation-v2":lsGet("bonus-allocation-v2"),
-    };
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], {type:"application/json"});
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    const date = new Date().toISOString().split("T")[0];
-    a.href = url; a.download = `finance-backup-${date}.json`; a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importData = (e) => {
-    setError("");
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        if (data["monthly-tracker"])     lsSet("monthly-tracker",     data["monthly-tracker"]);
-        if (data["budget-overrides"])    lsSet("budget-overrides",    data["budget-overrides"]);
-        if (data["sf-funds"])            lsSet("sf-funds",            data["sf-funds"]);
-        if (data["bonus-allocation-v2"]) lsSet("bonus-allocation-v2", data["bonus-allocation-v2"]);
-        setImported(true);
-        setTimeout(() => window.location.reload(), 1200);
-      } catch {
-        setError("Invalid backup file. Please use a file exported from this app.");
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const syncColor = syncStatus==="ok"?GREEN : syncStatus==="error"?RED : syncStatus==="syncing"?BLUE : MUTED;
-  const syncLabel = syncStatus==="ok"?"✓ Synced to cloud" : syncStatus==="error"?"⚠ Sync failed (data saved locally)" : syncStatus==="syncing"?"↑ Syncing…" : supabase?"☁ Cloud sync active":"⚠ Not connected — edit SUPABASE_URL & KEY";
-
-  return (
-    <div style={{padding:"16px"}}>
-      <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:16}}>Data Backup & Restore</div>
-
-      {/* Sync status */}
-      <div style={{background:CARD,border:`1px solid ${syncColor}44`,borderRadius:12,padding:"14px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
-        <div style={{width:8,height:8,borderRadius:"50%",background:syncColor,flexShrink:0}}/>
-        <div style={{flex:1}}>
-          <div style={{fontSize:13,fontWeight:600,color:syncColor}}>{syncLabel}</div>
-          {supabase && <div style={{fontSize:11,color:MUTED,marginTop:2}}>Your data syncs automatically across all devices when online.</div>}
-          {!supabase && <div style={{fontSize:11,color:MUTED,marginTop:2}}>See setup instructions at the bottom of this screen.</div>}
-        </div>
-      </div>
-
-      {/* Export */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"18px",marginBottom:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:22}}>📤</span>
-          <div>
-            <div style={{fontWeight:700,fontSize:15}}>Export Backup</div>
-            <div style={{fontSize:12,color:MUTED,marginTop:2}}>Save all your data as a file on your device</div>
-          </div>
-        </div>
-        <button onClick={exportData} style={{width:"100%",padding:"14px",borderRadius:10,border:"none",background:GREEN,color:"#0F1117",fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:"inherit"}}>
-          📥 Download Backup File
-        </button>
-      </div>
-
-      {/* Import */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"18px",marginBottom:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:22}}>📥</span>
-          <div>
-            <div style={{fontWeight:700,fontSize:15}}>Restore from Backup</div>
-            <div style={{fontSize:12,color:MUTED,marginTop:2}}>Load a previously exported backup file</div>
-          </div>
-        </div>
-        {imported ? (
-          <div style={{padding:"12px",borderRadius:10,background:`${GREEN}18`,border:`1px solid ${GREEN}44`,color:GREEN,fontSize:13,fontWeight:600,textAlign:"center"}}>
-            ✓ Data restored! Reloading...
-          </div>
-        ) : (
-          <label style={{display:"block",width:"100%",padding:"14px",borderRadius:10,border:`2px dashed ${BORDER}`,color:MUTED,fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:"inherit",textAlign:"center",boxSizing:"border-box"}}>
-            📂 Choose Backup File
-            <input type="file" accept=".json" onChange={importData} style={{display:"none"}} />
-          </label>
-        )}
-        {error && <div style={{marginTop:10,padding:"10px 12px",borderRadius:8,background:`${RED}15`,color:RED,fontSize:12}}>{error}</div>}
-      </div>
-
-      {/* Setup instructions (only shown if not configured) */}
-      {!supabase && (
-        <div style={{background:CARD,border:`1px solid ${YELLOW}44`,borderRadius:12,padding:"16px"}}>
-          <div style={{fontSize:12,color:YELLOW,fontWeight:700,marginBottom:10}}>☁️ Enable Cloud Sync — Supabase Setup</div>
-          {[
-            "Go to supabase.com and open your project",
-            "Run this SQL in the SQL Editor:\n\nCREATE TABLE finance_data (\n  user_id TEXT PRIMARY KEY,\n  payload JSONB,\n  updated_at TIMESTAMPTZ\n);",
-            "Go to Project Settings → API",
-            "Copy your Project URL and anon/public key",
-            'Open index.html and paste them into:\n\nconst SUPABASE_URL = "..."\nconst SUPABASE_ANON_KEY = "..."',
-            "Save and push to GitHub — done!",
-          ].map((step, i) => (
-            <div key={i} style={{display:"flex",gap:10,marginBottom:10,alignItems:"flex-start"}}>
-              <div style={{width:20,height:20,borderRadius:"50%",background:`${YELLOW}22`,border:`1px solid ${YELLOW}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:YELLOW,flexShrink:0,marginTop:1}}>{i+1}</div>
-              <div style={{fontSize:12,color:MUTED,lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:step.includes("CREATE")||step.includes("const ")?"'DM Mono',monospace":"inherit"}}>{step}</div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function App() {
-  const [tab, setTab] = useState("monthly");
-  const [isDark, setIsDark] = useState(() => {
-    try { return lsGet("theme") !== "light"; } catch { return true; }
-  });
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    hydrateFromCloud().then(didSync => {
-      setHydrated(true);
-      if (didSync) {
-        // Re-read theme from cloud-hydrated localStorage
-        setIsDark(lsGet("theme") !== "light");
-      }
-    });
-  }, []);
-  applyTheme(isDark ? DARK : LIGHT);
-
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    try { lsSet("theme", next ? "dark" : "light"); } catch {}
-  };
-
-  return (
-    <div style={{minHeight:"100vh",background:BG,color:TEXT,paddingBottom:80}}>
-      {/* Top bar */}
-      <div style={{position:"sticky",top:0,zIndex:50,background:CARD,borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div>
-          <div style={{fontSize:10,color:MUTED,letterSpacing:"0.1em",textTransform:"uppercase"}}>Personal Finance</div>
-          <div style={{fontSize:17,fontWeight:700,letterSpacing:"-0.01em"}}>{TABS.find(t=>t.id===tab)?.icon} {TABS.find(t=>t.id===tab)?.label}</div>
-        </div>
-        <button onClick={toggleTheme} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",fontSize:13,color:MUTED,fontFamily:"inherit"}}>
-          {isDark ? "☀️" : "🌙"}
-        </button>
-      </div>
-
-      {tab==="monthly"  && <MonthlyTracker />}
-      {tab==="sinking"  && <SinkingFunds />}
-      {tab==="bonus"    && <BonusAllocation />}
-      {tab==="settings" && <BackupRestore />}
-
-      {/* Bottom nav */}
-      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:CARD,borderTop:`1px solid ${BORDER}`,display:"flex",paddingBottom:"env(safe-area-inset-bottom)"}}>
-        {TABS.map(t=>{
-          const active = tab===t.id;
-          return (
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"12px 8px 10px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,borderTop:`2px solid ${active?YELLOW:"transparent"}`}}>
-              <span style={{fontSize:20}}>{t.icon}</span>
-              <span style={{fontSize:10,fontWeight:600,color:active?YELLOW:MUTED,letterSpacing:"0.04em"}}>{t.label}</span>
-            </button>
-          );
-        })}
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Symbol</th><th>Qty</th>
+            <th>Avg Cost (SGD)</th><th>Current Price</th><th>Mkt Value (SGD)</th>
+            <th class="col-divider">Unreal. P&amp;L (SGD)</th><th>P&amp;L %</th>
+            <th class="col-divider">Est. Annual Div.</th><th>Div Yield</th>
+            <th class="col-divider">Portfolio Wt.</th>
+          </tr></thead>
+          <tbody id="sg-body"></tbody>
+          <tfoot><tr id="sg-total"></tr></tfoot>
+        </table>
       </div>
     </div>
-  );
-}
+  </div>
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script>
+  <!-- ENDOWUS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-dot" style="background:var(--en);box-shadow:0 0 8px rgba(167,139,250,0.5)"></span>
+        Endowus Cash
+      </div>
+      <span class="section-meta" id="en-meta">—</span>
+    </div>
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Fund</th><th>Type</th><th>Mkt Value (SGD)</th>
+            <th class="col-divider">Unreal. P&amp;L (SGD)</th><th>P&amp;L %</th>
+            <th class="col-divider">Portfolio Wt.</th>
+          </tr></thead>
+          <tbody id="en-body"></tbody>
+          <tfoot><tr id="en-total"></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSACTIONS TAB -->
+<div class="panel" id="panel-transactions">
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-dot" style="background:var(--us)"></span>Transaction Log
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="action-btn" onclick="openModal('buy','us')">+ US Transaction</button>
+        <button class="action-btn" onclick="openModal('buy','sg')">+ SG Transaction</button>
+      </div>
+    </div>
+    <div id="tx-list-wrap"><div class="empty-state">No transactions logged yet.</div></div>
+  </div>
+</div>
+
+<!-- DIVIDENDS TAB -->
+<div class="panel" id="panel-dividends">
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-dot" style="background:var(--green)"></span>Dividend Income
+      </div>
+      <button class="action-btn accent" onclick="openModal('div','sg')">+ Log Dividend</button>
+    </div>
+    <div class="div-summary">
+      <div class="div-stat">
+        <div class="div-stat-label">Total Received</div>
+        <div class="div-stat-val pos" id="div-total-recv">SGD 0</div>
+      </div>
+      <div class="div-stat">
+        <div class="div-stat-label">Est. Annual (DPU based)</div>
+        <div class="div-stat-val" style="color:var(--accent)" id="div-annual-est">—</div>
+      </div>
+      <div class="div-stat">
+        <div class="div-stat-label">Progress to SGD 6,500</div>
+        <div class="div-stat-val" id="div-progress">—</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Stock</th><th>Units</th>
+            <th>DPU (SGD)</th><th>Gross Amount</th><th>Tax / Fee</th>
+            <th>Net Received</th><th style="width:40px"></th>
+          </tr></thead>
+          <tbody id="div-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="div-empty" class="empty-state" style="display:none">No dividends logged yet. Click "+ Log Dividend" to add one.</div>
+  </div>
+</div>
+
+</div><!-- /page -->
+
+<!-- BUY MODAL -->
+<div class="modal-bg" id="modal-buy">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('buy')">✕</button>
+    <h2 id="modal-buy-title">Add Transaction</h2>
+    <div class="modal-sub" id="modal-buy-sub">Log a new purchase</div>
+    <div class="form-group">
+      <label>Stock Symbol</label>
+      <select id="buy-symbol"></select>
+    </div>
+    <div class="form-group" id="buy-new-symbol-wrap" style="display:none">
+      <label>New Symbol (e.g. AAPL, V68U)</label>
+      <input type="text" id="buy-new-symbol" placeholder="Enter ticker symbol" style="text-transform:uppercase">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Number of Units</label>
+        <input type="number" id="buy-qty" placeholder="e.g. 500" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label>Cost Per Unit</label>
+        <input type="number" id="buy-price" placeholder="e.g. 2.50" step="0.0001">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Brokerage / Other Costs</label>
+      <input type="number" id="buy-fee" placeholder="e.g. 10.00 (optional)" step="0.01" value="0">
+    </div>
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="buy-date">
+    </div>
+    <div id="buy-preview" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('buy')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitBuy()">Add Transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- DIVIDEND MODAL -->
+<div class="modal-bg" id="modal-div">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('div')">✕</button>
+    <h2>Log Dividend</h2>
+    <div class="modal-sub">Record a dividend payment received</div>
+    <div class="form-group">
+      <label>Stock</label>
+      <select id="div-symbol"></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Units Held (at ex-date)</label>
+        <input type="number" id="div-qty" placeholder="Auto-fills" step="1">
+      </div>
+      <div class="form-group">
+        <label>DPU / DPS (SGD)</label>
+        <input type="number" id="div-dpu" placeholder="e.g. 0.152" step="0.0001">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tax Withheld / Fees (SGD)</label>
+        <input type="number" id="div-tax" placeholder="0.00" step="0.01" value="0">
+      </div>
+      <div class="form-group">
+        <label>Date Received</label>
+        <input type="date" id="div-date">
+      </div>
+    </div>
+    <div id="div-preview" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('div')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitDiv()">Log Dividend</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENDOWUS EDIT MODAL -->
+<div class="modal-bg" id="modal-en">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('en')">✕</button>
+    <h2 id="modal-en-title">Update Fund Value</h2>
+    <div class="modal-sub" id="modal-en-sub">Enter the current portfolio value from Endowus</div>
+    <input type="hidden" id="en-fund-idx">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Current Value (SGD)</label>
+        <input type="number" id="en-mv" placeholder="e.g. 21500.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Original Cost (SGD)</label>
+        <input type="number" id="en-cost" placeholder="e.g. 13258.60" step="0.01">
+      </div>
+    </div>
+    <div id="en-preview" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('en')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEnEdit()">Update</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
-// Bump this version number every time the file is updated.
-// The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.7.0";
+// ── SUPABASE CONFIG ───────────────────────────────────────
+const SUPA_URL = 'https://nninkozbzhlwunqbcyty.supabase.co';
+const SUPA_KEY = 'sb_publishable_txoZD2zujQzGpZXCQKSKww_4z7hpecN';
 
-if ('serviceWorker' in navigator) {
-  // Inline the service worker as a blob so we don't need a separate sw.js file
-  const swCode = `
-    const VERSION = "${APP_VERSION}";
-    const CACHE = "finance-tracker-" + VERSION;
-
-    self.addEventListener("install", e => {
-      // Take over immediately without waiting
-      self.skipWaiting();
+const supa = {
+  async select(table) {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?select=*&order=created_at.asc`, {
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' }
     });
-
-    self.addEventListener("activate", e => {
-      // Delete all old caches that don't match current version
-      e.waitUntil(
-        caches.keys().then(keys =>
-          Promise.all(
-            keys.filter(k => k !== CACHE).map(k => caches.delete(k))
-          )
-        ).then(() => self.clients.claim())
-      );
+    if (!r.ok) throw new Error(`SELECT ${table} failed: ${r.status}`);
+    return r.json();
+  },
+  async insert(table, row) {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(row)
     });
-
-    self.addEventListener("fetch", e => {
-      // Always go to network first, fall back to cache
-      // This ensures updates are picked up immediately
-      e.respondWith(
-        fetch(e.request)
-          .then(res => {
-            // Cache a copy of the response
-            const clone = res.clone();
-            caches.open(CACHE).then(cache => cache.put(e.request, clone));
-            return res;
-          })
-          .catch(() => caches.match(e.request))
-      );
+    if (!r.ok) throw new Error(`INSERT ${table} failed: ${r.status} ${await r.text()}`);
+    return r.json();
+  },
+  async delete(table, id) {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' }
     });
+    if (!r.ok) throw new Error(`DELETE ${table} failed: ${r.status}`);
+  }
+};
 
-    // Tell all open tabs to reload when a new version activates
-    self.addEventListener("message", e => {
-      if (e.data === "skipWaiting") self.skipWaiting();
+// ── TWELVE DATA CONFIG ───────────────────────────────────
+const TD_KEY  = '117282f5fbd5498e9817b0e22057ab5f';
+const TD_BASE = 'https://api.twelvedata.com';
+
+// US stocks fetched via Twelve Data; SG stocks use snapshot values
+const TD_SYMBOLS_US = ['MSFT','META','NET','NFLX','TSLA','CRWD','AXON','GLD','MA','NVDA','AMD','MU','IBIT','COPX','OKLO','PATH','NBIS'];
+
+// Cache prices so we don't re-fetch on every render
+let livePrices = {}; // { 'MSFT': 392.50, 'D05.SI': 38.20, ... }
+let fxRate     = 1.265; // updated from Twelve Data if available
+let pricesLoadedAt = null;
+
+async function fetchLivePrices() {
+  setStatus('⟳ Fetching US prices…');
+
+  async function fetchBatch(symbols) {
+    const joined = symbols.join(',');
+    const res  = await fetch(`${TD_BASE}/price?symbol=${joined}&apikey=${TD_KEY}`);
+    const data = await res.json();
+    if (data.price && !data.code && symbols.length === 1) return { [symbols[0]]: data };
+    return data;
+  }
+
+  function parseBatch(data) {
+    Object.entries(data).forEach(([sym, d]) => {
+      if (d && d.price && !d.code && !d.status) {
+        const p = parseFloat(d.price);
+        if (!isNaN(p) && p > 0) livePrices[sym] = p;
+      }
     });
-  `;
+  }
 
-  const blob = new Blob([swCode], {type: "application/javascript"});
-  const swUrl = URL.createObjectURL(blob);
+  try {
+    // Fetch FX rate
+    const fxRes  = await fetch(`${TD_BASE}/exchange_rate?symbol=USD/SGD&apikey=${TD_KEY}`);
+    const fxData = await fxRes.json();
+    if (fxData.rate && !fxData.code) fxRate = parseFloat(fxData.rate);
 
-  navigator.serviceWorker.register(swUrl).then(reg => {
-    // When a new service worker is waiting, reload the page to apply it
-    reg.addEventListener("updatefound", () => {
-      const newWorker = reg.installing;
-      newWorker.addEventListener("statechange", () => {
-        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-          // New version available — reload silently to apply update
-          newWorker.postMessage("skipWaiting");
-          window.location.reload();
-        }
-      });
-    });
+    // Fetch US symbols in batches of 8 (free tier limit)
+    const BATCH = 8;
+    for (let i = 0; i < TD_SYMBOLS_US.length; i += BATCH) {
+      const batch = TD_SYMBOLS_US.slice(i, i + BATCH);
+      const data  = await fetchBatch(batch);
+      parseBatch(data);
+      if (i + BATCH < TD_SYMBOLS_US.length) await new Promise(r => setTimeout(r, 1100));
+    }
 
-    // Check for updates every time the app is opened or comes to foreground
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") reg.update();
-    });
-  }).catch(err => console.log("SW registration failed:", err));
+    const loaded  = Object.keys(livePrices).length;
+    const timeStr = new Date().toLocaleTimeString('en-SG', {hour:'2-digit', minute:'2-digit'});
+    setStatus(`✓ ${loaded} US prices updated ${timeStr} · FX ${fxRate.toFixed(4)} · SG prices are snapshot`);
+    pricesLoadedAt = new Date();
+    return true;
+  } catch(e) {
+    setStatus('⚠ Price fetch failed — using snapshot values', true);
+    console.error('fetchLivePrices error:', e);
+    return false;
+  }
 }
+
+function applyLivePrices(arr, market) {
+  arr.forEach(h => {
+    const tdSym = market === 'sg' ? h.symbol + '.SI' : h.symbol;
+    const livePrice = livePrices[tdSym];
+    if (livePrice && livePrice > 0) {
+      h.mv = livePrice * h.qty;
+      h.pl = h.mv - h.cost;
+    }
+  });
+}
+
+// ── BASE DATA (28 Feb 2026 snapshot) ─────────────────────
+const BASE_US = [
+  {symbol:'MSFT',name:'Microsoft',           qty:20, cost:8646.55, mv:7854.80,  pl:-791.75},
+  {symbol:'META',name:'Meta Platforms',      qty:7,  cost:4438.36, mv:4536.94,  pl:98.58  },
+  {symbol:'NET', name:'Cloudflare',          qty:16, cost:1827.92, mv:2812.65,  pl:984.73 },
+  {symbol:'NFLX',name:'Netflix',             qty:28, cost:2404.10, mv:2694.72,  pl:290.62 },
+  {symbol:'TSLA',name:'Tesla',               qty:18, cost:4959.78, mv:7245.18,  pl:2285.40},
+  {symbol:'CRWD',name:'CrowdStrike',         qty:9,  cost:2390.20, mv:3347.82,  pl:957.62 },
+  {symbol:'AXON',name:'Axon Enterprise',     qty:7,  cost:3439.49, mv:3796.80,  pl:357.31 },
+  {symbol:'GLD', name:'SPDR Gold Shares',    qty:9,  cost:3016.40, mv:4353.75,  pl:1337.35},
+  {symbol:'MA',  name:'Mastercard',          qty:10, cost:5304.00, mv:5172.10,  pl:-131.90},
+  {symbol:'NVDA',name:'NVIDIA',              qty:7,  cost:799.36,  mv:1240.33,  pl:440.97 },
+  {symbol:'AMD', name:'AMD',                 qty:5,  cost:1050.00, mv:1001.05,  pl:-48.95 },
+  {symbol:'MU',  name:'Micron Technology',   qty:3,  cost:993.00,  mv:1237.11,  pl:244.11 },
+  {symbol:'IBIT',name:'iShares Bitcoin ETF', qty:35, cost:2261.84, mv:1302.00,  pl:-959.84},
+  {symbol:'COPX',name:'Global X Copper ETF', qty:8,  cost:721.60,  mv:765.60,   pl:44.00  },
+  {symbol:'OKLO',name:'Oklo Inc.',           qty:10, cost:861.10,  mv:629.50,   pl:-231.60},
+  {symbol:'PATH',name:'UiPath',              qty:50, cost:652.33,  mv:536.50,   pl:-115.83},
+  {symbol:'NBIS',name:'NEBIUS',              qty:8,  cost:794.19,  mv:729.52,   pl:-64.67 },
+];
+
+const BASE_SG = [
+  {symbol:'D05', name:'DBS Group',                qty:750,   cost:24999, mv:42840, pl:17841, dpu:3.24 },
+  {symbol:'O39', name:'OCBC Bank',                qty:500,   cost:8534,  mv:10715, pl:2181,  dpu:0.99 },
+  {symbol:'A17U',name:'CapLand Ascendas REIT',    qty:7200,  cost:18620, mv:20376, pl:1756,  dpu:0.152},
+  {symbol:'J69U',name:'Frasers Cpt Tr',           qty:4100,  cost:9007,  mv:9389,  pl:382,   dpu:0.121},
+  {symbol:'BUOU',name:'Frasers L&C Tr',           qty:17100, cost:17783, mv:16929, pl:-854,  dpu:0.060},
+  {symbol:'M44U',name:'Mapletree Log Tr',         qty:3400,  cost:4407,  mv:4386,  pl:-21,   dpu:0.071},
+  {symbol:'C38U',name:'CapitaLand Integrated CT', qty:400,   cost:951,   mv:948,   pl:-3,    dpu:0.120},
+];
+
+const ENDOWUS = [
+  {name:'CASH$$$TREE',    type:'Flagship · Very Aggressive', mv:20929.41, pl:7670.81},
+  {name:'1FUND World',    type:'Fund Smart',                 mv:17370.95, pl:3648.45},
+  {name:'iShares S&P 500',type:'Fund Smart',                 mv:15247.04, pl:887.04 },
+  {name:'中国梦好日子',    type:'Fund Smart',                 mv:2036.19,  pl:36.19  },
+];
+
+let FX = 1.265; // updated from live FX fetch
+
+// ── STATE ─────────────────────────────────────────────────
+let transactions  = [];
+let dividends     = [];
+let usStocks      = [];
+let sgStocks      = [];
+let isLoading     = true;
+let endowusValues = {}; // { 'CASH$$$TREE': {mv, cost}, ... } — overrides from Supabase
+
+// ── ENDOWUS VALUE HELPERS ────────────────────────────────
+async function loadEndowusValues() {
+  try {
+    const rows = await supa.select('endowus_values');
+    endowusValues = {};
+    rows.forEach(r => { endowusValues[r.fund_name] = { mv: r.mv, cost: r.cost, id: r.id }; });
+  } catch(e) {
+    // table may not exist yet — silently ignore
+    endowusValues = {};
+  }
+}
+
+function getEndowusMV(name) {
+  return endowusValues[name] ? endowusValues[name].mv : null;
+}
+function getEndowusCost(name) {
+  return endowusValues[name] ? endowusValues[name].cost : null;
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+const f   = (n, dp=2) => Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:dp, maximumFractionDigits:dp});
+const sgn = n => n >= 0 ? '+' : '−';
+const cl  = n => n >= 0 ? 'pos' : 'neg';
+const pp  = (pl, cost) => cost ? (pl/cost)*100 : 0;
+const today = () => new Date().toISOString().split('T')[0];
+
+function plPill(val, label) { return `<span class="pl-pill ${cl(val)}">${sgn(val)}${label}</span>`; }
+function pctBadge(val)      { return `<span class="pct-badge ${cl(val)}">${sgn(val)}${Math.abs(val).toFixed(1)}%</span>`; }
+function wtBar(pct, maxPct, color) {
+  const fill = Math.min(100,(pct/maxPct)*100).toFixed(1);
+  return `<div class="wt-row"><span class="wt-label" style="color:${color}">${pct.toFixed(1)}%</span><div class="wt-track"><div class="wt-fill" style="width:${fill}%;background:${color};opacity:.8"></div></div></div>`;
+}
+
+function setStatus(msg, isError=false) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--red)' : 'var(--muted)';
+}
+
+// ── APPLY TRANSACTIONS → working arrays ──────────────────
+function applyTransactions() {
+  usStocks = BASE_US.map(h => ({...h}));
+  sgStocks = BASE_SG.map(h => ({...h}));
+
+  // Apply live prices to US holdings; SG uses snapshot values
+  applyLivePrices(usStocks, 'us');
+
+  transactions.forEach(tx => {
+    const arr      = tx.market === 'us' ? usStocks : sgStocks;
+    const existing = arr.find(h => h.symbol === tx.symbol);
+    const txCost   = tx.qty * tx.price + (tx.fee || 0);
+
+    if (existing) {
+      // After live prices applied, recalc mv for full qty
+      const livePerUnit = existing.mv / (existing.qty || 1);
+      existing.cost += txCost;
+      existing.qty  += tx.qty;
+      existing.mv    = livePerUnit * existing.qty;
+      existing.pl    = existing.mv - existing.cost;
+    } else {
+      // New position — use live price if available, else buy price
+      const liveP = tx.market === 'us' ? (livePrices[tx.symbol] || tx.price) : tx.price;
+      const newMV = liveP * tx.qty;
+      const entry = { symbol:tx.symbol, name:tx.name||tx.symbol, qty:tx.qty, cost:txCost, mv:newMV, pl:newMV-txCost };
+      if (tx.market === 'sg') entry.dpu = tx.dpu || 0;
+      arr.push(entry);
+    }
+  });
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function render() {
+  applyTransactions();
+
+  const usMVusd = usStocks.reduce((s,h) => s+h.mv, 0);
+  const usMVsgd = usMVusd * FX;
+  const usPLusd = usStocks.reduce((s,h) => s+h.pl, 0);
+  const usCost  = usStocks.reduce((s,h) => s+h.cost, 0);
+  const sgMVsgd = sgStocks.reduce((s,h) => s+h.mv, 0);
+  const sgPLsgd = sgStocks.reduce((s,h) => s+h.pl, 0);
+  const sgCost  = sgStocks.reduce((s,h) => s+h.cost, 0);
+  const sgDivEst= sgStocks.reduce((s,h) => s+(h.qty*(h.dpu||0)), 0);
+  const enMVsgd = ENDOWUS.reduce((s,h) => { const ov=endowusValues[h.name]; return s+(ov?ov.mv:h.mv); }, 0);
+  const enCost  = ENDOWUS.reduce((s,h) => { const ov=endowusValues[h.name]; return s+(ov?ov.cost:(h.mv-h.pl)); }, 0);
+  const enPLsgd = enMVsgd - enCost;
+  const total   = usMVsgd + sgMVsgd + enMVsgd;
+  const divRecv = dividends.reduce((s,d) => s+d.net, 0);
+
+  document.getElementById('hdr-total').textContent = 'SGD ' + f(total, 0);
+  document.getElementById('s-pos').textContent = usStocks.length + sgStocks.length + ENDOWUS.length;
+
+  document.getElementById('s-us-val').textContent = 'SGD ' + f(usMVsgd, 0);
+  document.getElementById('s-us-pct').textContent = ((usMVsgd/total)*100).toFixed(1) + '% of portfolio';
+  document.getElementById('s-sg-val').textContent = 'SGD ' + f(sgMVsgd, 0);
+  document.getElementById('s-sg-pct').textContent = ((sgMVsgd/total)*100).toFixed(1) + '% of portfolio';
+  document.getElementById('s-en-val').textContent = 'SGD ' + f(enMVsgd, 0);
+  document.getElementById('s-en-pct').textContent = ((enMVsgd/total)*100).toFixed(1) + '% of portfolio';
+  document.getElementById('s-div-recv').textContent = 'SGD ' + f(divRecv, 2);
+  document.getElementById('s-div-recv-sub').textContent = dividends.length + ' payment' + (dividends.length!==1?'s':'') + ' logged';
+
+  const totalPL   = usPLusd*FX + sgPLsgd + enPLsgd;
+  const totalCost = usCost*FX + sgCost + enCost;
+  const plEl = document.getElementById('s-pl');
+  plEl.className = 'card-val ' + cl(totalPL);
+  plEl.textContent = sgn(totalPL) + 'SGD ' + f(totalPL, 0);
+  document.getElementById('s-pl-sub').textContent = sgn(totalPL) + Math.abs(pp(totalPL,totalCost)).toFixed(1) + '% on cost';
+
+  document.getElementById('div-total-recv').textContent = 'SGD ' + f(divRecv, 2);
+  document.getElementById('div-annual-est').textContent = 'SGD ' + f(sgDivEst, 0);
+  const progress = Math.min(((divRecv/6500)*100), 999).toFixed(1);
+  const progEl = document.getElementById('div-progress');
+  progEl.textContent = progress + '%';
+  progEl.className = 'div-stat-val ' + (divRecv >= 6500 ? 'pos' : '');
+
+  // ── US TABLE
+  const usSorted = [...usStocks].sort((a,b) => (b.mv*FX)-(a.mv*FX));
+  const usMaxWt  = (usSorted[0].mv*FX/total)*100;
+  document.getElementById('us-meta').textContent =
+    `${usSorted.length} positions · USD ${f(usMVusd,0)} · SGD ${f(usMVsgd,0)}`;
+  document.getElementById('us-body').innerHTML = usSorted.map((h,i) => {
+    const mvS=h.mv*FX, plS=h.pl*FX, wt=(mvS/total)*100, pct=pp(h.pl,h.cost), avg=h.cost/h.qty;
+    return `<tr>
+      <td class="rank">${i+1}</td>
+      <td><div class="sym-badge" style="color:var(--us)">${h.symbol}</div><div class="sym-name">${h.name}</div></td>
+      <td class="num">${h.qty.toLocaleString()}</td>
+      <td class="num">${f(avg)}</td>
+      <td class="num" style="color:var(--text)">${f(h.mv/h.qty)}</td>
+      <td class="num">${f(h.mv)}</td>
+      <td class="num" style="color:rgba(126,179,255,.75)">SGD ${f(mvS,0)}</td>
+      <td class="col-divider">${plPill(h.pl, f(h.pl))}</td>
+      <td>${plPill(plS, 'SGD '+f(plS,0))}</td>
+      <td>${pctBadge(pct)}</td>
+      <td class="col-divider">${wtBar(wt, usMaxWt, 'var(--us)')}</td>
+    </tr>`;
+  }).join('');
+  const usTotPct=pp(usPLusd,usCost), usPLs=usPLusd*FX;
+  document.getElementById('us-total').innerHTML = `
+    <td></td><td style="font-size:10px;letter-spacing:.1em;color:var(--muted);font-family:'DM Mono',monospace">TOTAL</td>
+    <td></td><td></td>
+    <td></td><td class="num">USD ${f(usMVusd,0)}</td>
+    <td class="num" style="color:var(--us)">SGD ${f(usMVsgd,0)}</td>
+    <td class="col-divider">${plPill(usPLusd, f(usPLusd,0))}</td>
+    <td>${plPill(usPLs, 'SGD '+f(usPLs,0))}</td>
+    <td>${pctBadge(usTotPct)}</td>
+    <td class="col-divider"><div class="wt-row"><span class="wt-label" style="color:var(--us)">${((usMVsgd/total)*100).toFixed(1)}%</span></div></td>`;
+
+  // ── SG TABLE
+  const sgSorted = [...sgStocks].sort((a,b) => b.mv-a.mv);
+  const sgMaxWt  = (sgSorted[0].mv/total)*100;
+  document.getElementById('sg-meta').textContent = `${sgSorted.length} positions · SGD ${f(sgMVsgd,0)}`;
+  document.getElementById('sg-body').innerHTML = sgSorted.map((h,i) => {
+    const wt=(h.mv/total)*100, pct=pp(h.pl,h.cost), avg=h.cost/h.qty;
+    const pricePerUnit = h.mv/h.qty;
+    const divYield = (h.dpu && pricePerUnit) ? ((h.dpu/pricePerUnit)*100).toFixed(1)+'%' : '—';
+    const estDiv = h.qty*(h.dpu||0);
+    return `<tr>
+      <td class="rank">${i+1}</td>
+      <td><div class="sym-badge" style="color:var(--sg)">${h.symbol}</div><div class="sym-name">${h.name}</div></td>
+      <td class="num">${h.qty.toLocaleString()}</td>
+      <td class="num">${f(avg,3)}</td>
+      <td class="num" style="color:var(--text)">${f(h.mv/h.qty,3)}</td>
+      <td class="num">${f(h.mv,0)}</td>
+      <td class="col-divider">${plPill(h.pl, 'SGD '+f(h.pl,0))}</td>
+      <td>${pctBadge(pct)}</td>
+      <td class="col-divider"><span class="num" style="color:var(--accent)">SGD ${f(estDiv,0)}</span></td>
+      <td><span class="num" style="color:var(--muted)">${divYield}</span></td>
+      <td class="col-divider">${wtBar(wt, sgMaxWt, 'var(--sg)')}</td>
+    </tr>`;
+  }).join('');
+  const sgTotPct=pp(sgPLsgd,sgCost);
+  document.getElementById('sg-total').innerHTML = `
+    <td></td><td style="font-size:10px;letter-spacing:.1em;color:var(--muted);font-family:'DM Mono',monospace">TOTAL</td>
+    <td></td><td></td>
+    <td></td><td class="num" style="color:var(--sg)">SGD ${f(sgMVsgd,0)}</td>
+    <td class="col-divider">${plPill(sgPLsgd, 'SGD '+f(sgPLsgd,0))}</td>
+    <td>${pctBadge(sgTotPct)}</td>
+    <td class="col-divider num" style="color:var(--accent)">SGD ${f(sgDivEst,0)}</td>
+    <td></td>
+    <td class="col-divider"><div class="wt-row"><span class="wt-label" style="color:var(--sg)">${((sgMVsgd/total)*100).toFixed(1)}%</span></div></td>`;
+
+  // ── ENDOWUS TABLE
+  const enSorted = [...ENDOWUS].sort((a,b) => b.mv-a.mv);
+  const enMaxWt  = (enSorted[0].mv/total)*100;
+  document.getElementById('en-meta').textContent = `${enSorted.length} funds · SGD ${f(enMVsgd,0)}`;
+  document.getElementById('en-body').innerHTML = enSorted.map((h,i) => {
+    const override = endowusValues[h.name];
+    const mv   = override ? override.mv   : h.mv;
+    const cost = override ? override.cost : (h.mv - h.pl);
+    const pl   = mv - cost;
+    const wt   = (mv/total)*100;
+    const pct  = pp(pl, cost);
+    const idx  = ENDOWUS.findIndex(e => e.name === h.name);
+    return `<tr>
+      <td class="rank">${i+1}</td>
+      <td><div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--en)">${h.name}</div><div class="sym-name">${h.type}</div></td>
+      <td style="text-align:left;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${h.type.split(' · ')[0]}</td>
+      <td class="num">SGD ${f(mv)}</td>
+      <td class="col-divider">${plPill(pl, 'SGD '+f(pl))}</td>
+      <td>${pctBadge(pct)}</td>
+      <td class="col-divider">${wtBar(wt, enMaxWt, 'var(--en)')}</td>
+      <td><button class="en-edit" onclick="openEnEdit(${idx})">✎ Edit</button></td>
+    </tr>`;
+  }).join('');
+  const enTotPct=pp(enPLsgd,enCost);
+  document.getElementById('en-total').innerHTML = `
+    <td></td><td style="font-size:10px;letter-spacing:.1em;color:var(--muted);font-family:'DM Mono',monospace">TOTAL</td><td></td>
+    <td class="num" style="color:var(--en)">SGD ${f(enMVsgd,0)}</td>
+    <td class="col-divider">${plPill(enPLsgd, 'SGD '+f(enPLsgd,0))}</td>
+    <td>${pctBadge(enTotPct)}</td>
+    <td class="col-divider"><div class="wt-row"><span class="wt-label" style="color:var(--en)">${((enMVsgd/total)*100).toFixed(1)}%</span></div></td>`;
+
+  renderTransactions();
+  renderDividends();
+}
+
+// ── TRANSACTION LOG ───────────────────────────────────────
+function renderTransactions() {
+  if (!transactions.length) {
+    document.getElementById('tx-list-wrap').innerHTML =
+      '<div class="empty-state">No transactions yet.<br>Use "+ Add Transaction" next to each section to log a purchase.</div>';
+    return;
+  }
+  const sorted = [...transactions].sort((a,b) => b.date.localeCompare(a.date));
+  document.getElementById('tx-list-wrap').innerHTML = `<div class="tx-list">${sorted.map(tx => {
+    const total = tx.qty*tx.price + (tx.fee||0);
+    const ccy   = tx.market==='us'?'USD':'SGD';
+    const col   = tx.market==='us'?'var(--us)':'var(--sg)';
+    return `<div class="tx-item">
+      <div class="tx-badge" style="color:${col};border-color:${col}20">${tx.market.toUpperCase()}</div>
+      <div class="tx-badge" style="color:${col}">${tx.symbol}</div>
+      <div class="tx-details">
+        <div class="tx-main">${tx.qty.toLocaleString()} units @ ${ccy} ${f(tx.price,4)}</div>
+        <div class="tx-sub">${tx.date}${tx.fee>0?' · Brokerage: '+ccy+' '+f(tx.fee,2):''}${tx.name&&tx.name!==tx.symbol?' · '+tx.name:''}</div>
+      </div>
+      <div class="tx-amount" style="color:${col}">${ccy} ${f(total,2)}</div>
+      <button class="tx-delete" onclick="deleteTx('${tx.id}')" title="Remove">✕</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ── DIVIDEND LOG ──────────────────────────────────────────
+function renderDividends() {
+  const empty = document.getElementById('div-empty');
+  const table = document.querySelector('#panel-dividends .table-wrap');
+  if (!dividends.length) {
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = 'block';
+  const sorted = [...dividends].sort((a,b) => b.date.localeCompare(a.date));
+  document.getElementById('div-body').innerHTML = sorted.map(d => {
+    const gross = d.qty * d.dpu;
+    return `<tr>
+      <td style="text-align:left;font-family:'DM Mono',monospace;font-size:12px">${d.date}</td>
+      <td style="text-align:left"><div class="sym-badge" style="color:var(--sg)">${d.symbol}</div></td>
+      <td class="num">${d.qty.toLocaleString()}</td>
+      <td class="num">${f(d.dpu,4)}</td>
+      <td class="num">SGD ${f(gross,2)}</td>
+      <td class="num" style="color:var(--red)">${d.tax>0?'−SGD '+f(d.tax,2):'—'}</td>
+      <td><span class="pl-pill pos">+SGD ${f(d.net,2)}</span></td>
+      <td><button class="tx-delete" onclick="deleteDiv('${d.id}')" title="Remove">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── MODAL — BUY ───────────────────────────────────────────
+let currentMarket = 'us';
+
+function openModal(type, market) {
+  if (type === 'buy') {
+    currentMarket = market;
+    applyTransactions();
+    const arr = market==='us' ? usStocks : sgStocks;
+    const ccy = market==='us' ? 'USD' : 'SGD';
+    document.getElementById('modal-buy-title').textContent = market==='us' ? 'Add US Transaction' : 'Add SG Transaction';
+    document.getElementById('modal-buy-sub').textContent   = `Log a purchase · amounts in ${ccy}`;
+    const sel = document.getElementById('buy-symbol');
+    sel.innerHTML =
+      `<option value="__new__">— Enter new symbol —</option>` +
+      arr.map(h=>`<option value="${h.symbol}">${h.symbol} — ${h.name}</option>`).join('');
+    sel.onchange = handleSymbolChange;
+    document.getElementById('buy-new-symbol-wrap').style.display = 'none';
+    document.getElementById('buy-new-symbol').value = '';
+    document.getElementById('buy-date').value  = today();
+    document.getElementById('buy-qty').value   = '';
+    document.getElementById('buy-price').value = '';
+    document.getElementById('buy-fee').value   = '0';
+    document.getElementById('buy-preview').style.display = 'none';
+    document.getElementById('modal-buy').classList.add('open');
+  } else {
+    applyTransactions();
+    const sel = document.getElementById('div-symbol');
+    sel.innerHTML = sgStocks.map(h=>`<option value="${h.symbol}">${h.symbol} — ${h.name}</option>`).join('');
+    sel.onchange  = autoFillDivQty;
+    document.getElementById('div-date').value  = today();
+    document.getElementById('div-qty').value   = '';
+    document.getElementById('div-dpu').value   = '';
+    document.getElementById('div-tax').value   = '0';
+    document.getElementById('div-preview').style.display = 'none';
+    autoFillDivQty();
+    document.getElementById('modal-div').classList.add('open');
+  }
+}
+
+function handleSymbolChange() {
+  const val = document.getElementById('buy-symbol').value;
+  document.getElementById('buy-new-symbol-wrap').style.display = val==='__new__' ? 'block' : 'none';
+  updateBuyPreview();
+}
+
+function closeModal(type) { document.getElementById('modal-'+type).classList.remove('open'); }
+
+// ── ENDOWUS EDIT ──────────────────────────────────────────
+function openEnEdit(idx) {
+  const fund = ENDOWUS[idx];
+  const override = endowusValues[fund.name];
+  document.getElementById('modal-en-title').textContent = fund.name;
+  document.getElementById('modal-en-sub').textContent   = fund.type;
+  document.getElementById('en-fund-idx').value = idx;
+  document.getElementById('en-mv').value   = override ? override.mv   : (fund.mv).toFixed(2);
+  document.getElementById('en-cost').value = override ? override.cost : (fund.mv - fund.pl).toFixed(2);
+  updateEnPreview();
+  document.getElementById('modal-en').classList.add('open');
+}
+
+function updateEnPreview() {
+  const mv   = parseFloat(document.getElementById('en-mv').value)   || 0;
+  const cost = parseFloat(document.getElementById('en-cost').value) || 0;
+  const prev = document.getElementById('en-preview');
+  if (!mv || !cost) { prev.style.display='none'; return; }
+  const pl  = mv - cost;
+  const pct = cost ? ((pl/cost)*100).toFixed(1) : 0;
+  prev.style.display = 'block';
+  prev.innerHTML = `Value: <span style="color:var(--en)">SGD ${f(mv)}</span>
+    &nbsp;·&nbsp; P&L: <span style="color:${pl>=0?'var(--green)':'var(--red)'}">
+    ${pl>=0?'+':'−'}SGD ${f(Math.abs(pl))}</span>
+    &nbsp;·&nbsp; <span style="color:${pl>=0?'var(--green)':'var(--red)'}">${pl>=0?'+':''}${pct}%</span>`;
+}
+
+async function submitEnEdit() {
+  const idx  = parseInt(document.getElementById('en-fund-idx').value);
+  const mv   = parseFloat(document.getElementById('en-mv').value);
+  const cost = parseFloat(document.getElementById('en-cost').value);
+  if (!mv || !cost) { alert('Please enter both Current Value and Original Cost.'); return; }
+  const fund = ENDOWUS[idx];
+  const btn  = document.querySelector('#modal-en .btn-primary');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    const existing = endowusValues[fund.name];
+    if (existing && existing.id) {
+      // Update existing row
+      const r = await fetch(`${SUPA_URL}/rest/v1/endowus_values?id=eq.${existing.id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify({ mv, cost })
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const [updated] = await r.json();
+      endowusValues[fund.name] = { mv: updated.mv, cost: updated.cost, id: updated.id };
+    } else {
+      // Insert new row
+      const [saved] = await supa.insert('endowus_values', { fund_name: fund.name, mv, cost });
+      endowusValues[fund.name] = { mv: saved.mv, cost: saved.cost, id: saved.id };
+    }
+    setStatus('✓ Endowus value updated');
+    closeModal('en');
+    render();
+  } catch(e) {
+    setStatus('⚠ Save failed — run the SQL to create endowus_values table', true);
+    alert('Could not save — run the SQL to create the endowus_values table.\n\n' + e.message);
+  } finally {
+    btn.textContent = 'Update'; btn.disabled = false;
+  }
+}
+
+function updateBuyPreview() {
+  const qty   = parseFloat(document.getElementById('buy-qty').value)   || 0;
+  const price = parseFloat(document.getElementById('buy-price').value) || 0;
+  const fee   = parseFloat(document.getElementById('buy-fee').value)   || 0;
+  const prev  = document.getElementById('buy-preview');
+  if (!qty || !price) { prev.style.display='none'; return; }
+  const total = qty*price + fee;
+  const ccy   = currentMarket==='us' ? 'USD' : 'SGD';
+  prev.style.display = 'block';
+  prev.innerHTML = `Total cost: <span style="color:var(--accent)">${ccy} ${f(total,2)}</span>
+    &nbsp;·&nbsp; ${qty.toLocaleString()} units @ ${ccy} ${f(price,4)}
+    ${fee>0?' + '+ccy+' '+f(fee,2)+' brokerage':''}`;
+}
+
+async function submitBuy() {
+  let sym = document.getElementById('buy-symbol').value;
+  if (sym === '__new__') {
+    sym = document.getElementById('buy-new-symbol').value.trim().toUpperCase();
+    if (!sym) { alert('Please enter a symbol.'); return; }
+  }
+  const qty   = parseInt(document.getElementById('buy-qty').value);
+  const price = parseFloat(document.getElementById('buy-price').value);
+  const fee   = parseFloat(document.getElementById('buy-fee').value) || 0;
+  const date  = document.getElementById('buy-date').value;
+  if (!qty || !price || qty<=0 || price<=0) { alert('Please fill in Units and Cost Per Unit.'); return; }
+
+  const arr   = currentMarket==='us' ? usStocks : sgStocks;
+  const stock = arr.find(h => h.symbol===sym);
+
+  const row = { symbol:sym, name:stock?stock.name:sym, market:currentMarket, qty, price, fee, date, dpu:stock?.dpu||0 };
+
+  const btn = document.querySelector('#modal-buy .btn-primary');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  try {
+    const [saved] = await supa.insert('transactions', row);
+    transactions.push(saved);
+    closeModal('buy');
+    render();
+    setStatus('✓ Saved · synced to cloud');
+    switchTab('transactions', document.querySelectorAll('.tab')[1]);
+    setTimeout(() => switchTab('portfolio', document.querySelectorAll('.tab')[0]), 1800);
+  } catch(e) {
+    setStatus('⚠ Save failed: ' + e.message, true);
+    alert('Could not save — check your Supabase tables are created.\n\n' + e.message);
+  } finally {
+    btn.textContent = 'Add Transaction'; btn.disabled = false;
+  }
+}
+
+// ── MODAL — DIVIDEND ─────────────────────────────────────
+function autoFillDivQty() {
+  const sym   = document.getElementById('div-symbol').value;
+  const stock = sgStocks.find(h => h.symbol===sym);
+  if (stock) {
+    document.getElementById('div-qty').value = stock.qty;
+    document.getElementById('div-dpu').value = stock.dpu || '';
+  }
+  updateDivPreview();
+}
+
+function updateDivPreview() {
+  const qty  = parseFloat(document.getElementById('div-qty').value)  || 0;
+  const dpu  = parseFloat(document.getElementById('div-dpu').value)  || 0;
+  const tax  = parseFloat(document.getElementById('div-tax').value)  || 0;
+  const prev = document.getElementById('div-preview');
+  if (!qty || !dpu) { prev.style.display='none'; return; }
+  const gross=qty*dpu, net=gross-tax;
+  prev.style.display = 'block';
+  prev.innerHTML = `Gross: <span style="color:var(--green)">SGD ${f(gross,2)}</span>
+    &nbsp;·&nbsp; Tax/Fee: SGD ${f(tax,2)}
+    &nbsp;·&nbsp; Net: <span style="color:var(--accent)">SGD ${f(net,2)}</span>`;
+}
+
+async function submitDiv() {
+  const sym  = document.getElementById('div-symbol').value;
+  const qty  = parseInt(document.getElementById('div-qty').value);
+  const dpu  = parseFloat(document.getElementById('div-dpu').value);
+  const tax  = parseFloat(document.getElementById('div-tax').value) || 0;
+  const date = document.getElementById('div-date').value;
+  if (!sym || !qty || !dpu) { alert('Please fill in Stock, Units and DPU.'); return; }
+  const net = qty*dpu - tax;
+  const row = { symbol:sym, qty, dpu, tax, net, date };
+
+  const btn = document.querySelector('#modal-div .btn-primary');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  try {
+    const [saved] = await supa.insert('dividends', row);
+    dividends.push(saved);
+    closeModal('div');
+    render();
+    setStatus('✓ Dividend saved · synced to cloud');
+    switchTab('dividends', document.querySelectorAll('.tab')[2]);
+  } catch(e) {
+    setStatus('⚠ Save failed: ' + e.message, true);
+    alert('Could not save dividend.\n\n' + e.message);
+  } finally {
+    btn.textContent = 'Log Dividend'; btn.disabled = false;
+  }
+}
+
+// ── DELETE ────────────────────────────────────────────────
+async function deleteTx(id) {
+  if (!confirm('Remove this transaction? Holdings will be recalculated.')) return;
+  try {
+    await supa.delete('transactions', id);
+    transactions = transactions.filter(t => t.id !== id);
+    render();
+    setStatus('✓ Transaction removed');
+  } catch(e) { setStatus('⚠ Delete failed', true); }
+}
+
+async function deleteDiv(id) {
+  if (!confirm('Remove this dividend entry?')) return;
+  try {
+    await supa.delete('dividends', id);
+    dividends = dividends.filter(d => d.id !== id);
+    render();
+    setStatus('✓ Dividend removed');
+  } catch(e) { setStatus('⚠ Delete failed', true); }
+}
+
+// ── TABS ──────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── INPUT LISTENERS ───────────────────────────────────────
+document.getElementById('en-mv').addEventListener('input',   updateEnPreview);
+document.getElementById('en-cost').addEventListener('input', updateEnPreview);
+document.getElementById('buy-qty').addEventListener('input',   updateBuyPreview);
+document.getElementById('buy-price').addEventListener('input', updateBuyPreview);
+document.getElementById('buy-fee').addEventListener('input',   updateBuyPreview);
+document.getElementById('div-qty').addEventListener('input',   updateDivPreview);
+document.getElementById('div-dpu').addEventListener('input',   updateDivPreview);
+document.getElementById('div-tax').addEventListener('input',   updateDivPreview);
+
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target===bg) bg.classList.remove('open'); });
+});
+
+// ── INIT — load from Supabase ─────────────────────────────
+async function init() {
+  // Step 1: Render immediately with snapshot data so something always shows
+  render();
+  setStatus('⟳ Loading…');
+
+  // Step 2: Load Supabase data
+  try {
+    const [txData, divData] = await Promise.all([
+      supa.select('transactions'),
+      supa.select('dividends'),
+    ]);
+    transactions = txData;
+    dividends    = divData;
+    await loadEndowusValues();
+  } catch(e) {
+    setStatus('⚠ Supabase unavailable — showing snapshot data', true);
+  }
+
+  // Step 3: Fetch live prices (always attempt, non-blocking)
+  try {
+    await fetchLivePrices();
+    FX = fxRate;
+  } catch(e) {
+    setStatus('⚠ Price fetch failed — using snapshot values', true);
+  }
+
+  // Step 4: Final render with all data
+  render();
+}
+
+init();
 </script>
 </body>
 </html>
