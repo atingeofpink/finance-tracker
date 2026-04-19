@@ -1150,18 +1150,18 @@ function InterestTracker({monthIdx, spending, setSpending, setBudgetVal}) {
         <span style={{fontSize:13,fontWeight:600,color:GREEN}}>Bank Interest</span>
         <span style={{fontSize:10,color:MUTED,marginLeft:2}}>e.g. 12.50 + 8.30 + 44</span>
       </div>
-      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <input
-          value={expr}
-          onChange={e=>evaluate(e.target.value)}
-          placeholder="12.50 + 8.30 + 44"
-          style={{flex:1,background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,
-            color:TEXT,fontSize:14,padding:"9px 11px",fontFamily:"'DM Mono',monospace",outline:"none"}}
-        />
-        <div style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:GREEN,
-          flexShrink:0,minWidth:90,textAlign:"right"}}>
-          = {fmt(total).replace("SGD ","")}
-        </div>
+      <textarea
+        value={expr}
+        onChange={e=>evaluate(e.target.value)}
+        placeholder="12.50 + 8.30 + 44"
+        rows={3}
+        style={{width:"100%",background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,
+          color:TEXT,fontSize:14,padding:"9px 11px",fontFamily:"'DM Mono',monospace",outline:"none",
+          resize:"none",lineHeight:1.6,boxSizing:"border-box",display:"block"}}
+      />
+      <div style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:GREEN,
+        textAlign:"right",marginTop:8}}>
+        = {fmt(total).replace("SGD ","")}
       </div>
     </div>
   );
@@ -1259,6 +1259,21 @@ function MonthlyTracker() {
           <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"#7A8099"}}>
             <span>SGD 0</span><span>{Math.round(pctUsed)||0}% used</span><span>{fmt(flexBudget)}</span>
           </div>
+        </div>
+
+        {/* Remarks */}
+        <div style={{background:"#181C27",border:"1px solid #252A3A",borderRadius:12,padding:"14px 16px",marginBottom:12}}>
+          <div style={{fontSize:11,color:MUTED,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>📝 Remarks</div>
+          <textarea
+            value={spendData.remarks||""}
+            onChange={e=>setSpendVal("remarks", e.target.value)}
+            placeholder={`Any notes for ${MONTHS[monthIdx]}…`}
+            style={{width:"100%",background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,
+              color:TEXT,fontSize:13,padding:"10px 12px",fontFamily:"inherit",outline:"none",
+              resize:"none",lineHeight:1.7,boxSizing:"border-box",display:"block",
+              minHeight:80, whiteSpace:"pre-wrap", overflowWrap:"break-word"}}
+            onInput={e=>{e.target.style.height="auto";e.target.style.height=e.target.scrollHeight+"px";}}
+          />
         </div>
 
         {/* Spending rows */}
@@ -1393,6 +1408,7 @@ function MonthlyTracker() {
             <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:"#5BC8A0"}}>{fmt(budget.income+(budget.extra||0)+(budget.interest||0))}</span>
           </div>
         </div>
+
       </>}
 
       {/* ── BUDGET TAB ── */}
@@ -1697,7 +1713,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.7.0";
+const APP_VERSION = "1.7.3";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
