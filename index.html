@@ -1095,12 +1095,19 @@ const DEFAULT_BUDGET = (m) => ({
 const calcFlex = (b) => Math.round((b.income + b.extra + (b.interest||0) - b.rent - b.tax - b.insurance - b.nonneg - b.gym - b.travel - b.savings) * 100) / 100;
 
 // Carry-forward: find effective budget for a month by applying all overrides
-// from month 0 up to monthIdx in order (later overrides win)
-const getEffectiveBudget = (overrides, monthIdx) => {
+// from month 0 up to monthIdx in order (later overrides win).
+// Interest is intentionally excluded from carry-forward — it's per-month only.
+const getEffectiveBudget = (overrides, monthIdx, spending) => {
   const base = DEFAULT_BUDGET(monthIdx);
   for (let m = 0; m <= monthIdx; m++) {
-    if (overrides[m]) Object.assign(base, overrides[m]);
+    if (overrides[m]) {
+      const { interest: _drop, ...rest } = overrides[m]; // strip interest from carry-forward
+      Object.assign(base, rest);
+    }
   }
+  // Read interest from spending for this month only
+  const spendData = (spending || {})[monthIdx] || {};
+  base.interest = parseFloat(spendData.interest_total) || 0;
   return base;
 };
 
@@ -1128,6 +1135,15 @@ function InterestTracker({monthIdx, spending, setSpending, setBudgetVal}) {
   const spendData  = spending[monthIdx] || {};
   const [expr, setExpr] = useState(spendData.interest_expr || "");
   const [total, setTotal] = useState(parseFloat(spendData.interest_total)||0);
+
+  // Resync local state whenever the month changes
+  useEffect(() => {
+    const d = spending[monthIdx] || {};
+    setExpr(d.interest_expr || "");
+    const t = parseFloat(d.interest_total) || 0;
+    setTotal(t);
+    setBudgetVal("interest", t);
+  }, [monthIdx]);
 
   const evaluate = (raw) => {
     setExpr(raw);
@@ -1181,13 +1197,15 @@ function MonthlyTracker() {
   useEffect(() => { try { lsSet("budget-overrides", JSON.stringify(overrides)); } catch {} }, [overrides]);
   useEffect(() => { try { lsSet("monthly-tracker",  JSON.stringify(spending));  } catch {} }, [spending]);
 
-  const budget     = getEffectiveBudget(overrides, monthIdx);
+  const budget     = getEffectiveBudget(overrides, monthIdx, spending);
   const flexBudget = calcFlex(budget);
   const spendData  = spending[monthIdx] || {};
   const isModified = !!overrides[monthIdx];
 
-  // Update budget: stores override on this month only; carry-forward happens via getEffectiveBudget
+  // Update budget: stores override on this month only; carry-forward happens via getEffectiveBudget.
+  // Interest is excluded — it lives in spending (per-month), not overrides (carry-forward).
   const setBudgetVal = (id, raw) => {
+    if (id === "interest") return; // interest is read from spending[monthIdx].interest_total, not overrides
     const val = parseFloat(raw);
     if (isNaN(val) || val < 0) return;
     setOverrides(prev => ({...prev, [monthIdx]: {...(prev[monthIdx]||{}), [id]: val}}));
@@ -1713,7 +1731,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.7.3";
+const APP_VERSION = "1.7.5";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
