@@ -109,9 +109,9 @@
 <body>
 <div id="root"></div>
 
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
 
 <script type="text/babel">
 const { useState, useEffect, useMemo } = React;
@@ -121,35 +121,38 @@ const SUPABASE_URL = "https://xwrrryobwimidamfasmd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3cnJyeW9id2ltaWRhbWZhc21kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDU2NzcsImV4cCI6MjA4ODg4MTY3N30.Uem-Ki_Hwxu8IkMWMjBw5_PvVL_0JGFfL9uWIruiqbA";
 const SUPABASE_USER_ID = "cheryl";
 
-// Minimal inline Supabase REST client — no CDN required
+// Minimal inline Supabase REST client — plain fetch, no async/await
 const supabase = {
-  async select() {
-    try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/finance_data?user_id=eq.${SUPABASE_USER_ID}&select=*`,
-        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
-      );
-      const rows = await res.json();
-      return { data: rows?.[0] || null, error: null };
-    } catch(e) { return { data: null, error: e }; }
+  select: function() {
+    return fetch(
+      SUPABASE_URL + "/rest/v1/finance_data?user_id=eq." + SUPABASE_USER_ID + "&select=*",
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY } }
+    ).then(function(res) {
+      return res.json();
+    }).then(function(rows) {
+      return { data: (rows && rows[0]) ? rows[0] : null, error: null };
+    }).catch(function(e) {
+      return { data: null, error: e };
+    });
   },
-  async upsert(payload) {
-    try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/finance_data`,
-        {
-          method: "POST",
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json",
-            Prefer: "resolution=merge-duplicates",
-          },
-          body: JSON.stringify({ user_id: SUPABASE_USER_ID, ...payload }),
-        }
-      );
-      return res.ok ? { error: null } : { error: await res.text() };
-    } catch(e) { return { error: e }; }
+  upsert: function(payload) {
+    return fetch(
+      SUPABASE_URL + "/rest/v1/finance_data",
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: "Bearer " + SUPABASE_ANON_KEY,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates",
+        },
+        body: JSON.stringify(Object.assign({ user_id: SUPABASE_USER_ID }, payload)),
+      }
+    ).then(function(res) {
+      return res.ok ? { error: null } : res.text().then(function(t) { return { error: t }; });
+    }).catch(function(e) {
+      return { error: e };
+    });
   }
 };
 
@@ -165,32 +168,31 @@ function getSyncStatus() { return _syncStatus; }
 
 const STORAGE_KEYS = ["monthly-tracker","budget-overrides","sf-funds","bonus-allocation-v2","theme"];
 
-async function dbLoad() {
-  try {
-    const { data, error } = await supabase.select();
-    if (error) throw error;
-    return data?.payload || null;
-  } catch { return null; }
+function dbLoad() {
+  return supabase.select().then(function(result) {
+    if (result.error) return null;
+    return (result.data && result.data.payload) ? result.data.payload : null;
+  }).catch(function() { return null; });
 }
 
-async function dbSave(payload) {
+function dbSave(payload) {
   setSyncStatus("syncing");
-  try {
-    const { error } = await supabase.upsert({ payload, updated_at: new Date().toISOString() });
-    if (error) throw error;
-    setSyncStatus("ok");
-  } catch { setSyncStatus("error"); }
+  return supabase.upsert({ payload: payload, updated_at: new Date().toISOString() })
+    .then(function(result) {
+      setSyncStatus(result.error ? "error" : "ok");
+    }).catch(function() { setSyncStatus("error"); });
 }
 
-// Debounced cloud save — batches rapid writes into one request
 let _saveTimer = null;
-let _pendingPayload = null;
 function scheduleSave() {
   clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(async () => {
+  _saveTimer = setTimeout(function() {
     const payload = {};
-    STORAGE_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) payload[k] = v; });
-    await dbSave(payload);
+    STORAGE_KEYS.forEach(function(k) {
+      const v = localStorage.getItem(k);
+      if (v) payload[k] = v;
+    });
+    dbSave(payload);
   }, 1500);
 }
 
@@ -204,12 +206,14 @@ function lsSet(key, value) {
   } catch {}
 }
 
-// On app start: pull from Supabase and hydrate localStorage
-async function hydrateFromCloud() {
-  const payload = await dbLoad();
-  if (!payload) return false;
-  STORAGE_KEYS.forEach(k => { if (payload[k]) localStorage.setItem(k, payload[k]); });
-  return true;
+function hydrateFromCloud() {
+  return dbLoad().then(function(payload) {
+    if (!payload) return false;
+    STORAGE_KEYS.forEach(function(k) {
+      if (payload[k]) localStorage.setItem(k, payload[k]);
+    });
+    return true;
+  });
 }
 
 // ─── THEME ───────────────────────────────────────────────────────────────────
