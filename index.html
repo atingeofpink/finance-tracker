@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -236,7 +235,7 @@ const INSURANCE_MILESTONES = [
 ];
 
 const FUND_META = [
-  {id:"travel",   name:"Travel",           icon:"✈",  color:YELLOW,  monthlyAdd:800 },
+  {id:"travel",   name:"Travel",           icon:"✈",  color:YELLOW,  monthlyAdd:1000 },
   {id:"insurance",name:"Insurance",         icon:"🛡", color:BLUE,    monthlyAdd:540 },
   {id:"home",     name:"4TP Maintenance",   icon:"🔧", color:GREEN,   monthlyAdd:165 },
   {id:"newhome",  name:"New Home",          icon:"🏠", color:PURPLE,  monthlyAdd:1200},
@@ -1071,24 +1070,26 @@ function BonusAllocation() {
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 const FLEX_CATS = [
-  {id:"food",     label:"Food & Groceries",                      icon:"🍜"},
-  {id:"beauty",   label:"Beauty",                                icon:"💅"},
-  {id:"shopping", label:"Shopping",                              icon:"🛍️"},
-  {id:"home_ent", label:"Home, Entertainment, Sports, Personal", icon:"🎮"},
-  {id:"cab",      label:"Cab",                                   icon:"🚕"},
-  {id:"gifts",    label:"Gifts",                                 icon:"🎁"},
+  {id:"food",     label:"Food & Groceries",          icon:"🍜"},
+  {id:"beauty",   label:"Beauty",                    icon:"💅"},
+  {id:"shopping", label:"Shopping",                  icon:"🛍️"},
+  {id:"home",     label:"Home",                      icon:"🏠"},
+  {id:"ent",      label:"Entertainment, Sports & Personal", icon:"🎮"},
+  {id:"cab",      label:"Cab",                       icon:"🚕"},
+  {id:"gifts",    label:"Gifts",                     icon:"🎁"},
+  {id:"travel_exp",label:"Travel Expenses",          icon:"✈️"},
 ];
 
 // Built-in defaults — flex is derived automatically
 const DEFAULT_BUDGET = (m) => ({
-  income:    11420,
-  rent:      1807.28,
+  income:    14310,
+  rent:      1810,
   tax:       m <= 3 ? 1354 : 1410,
   insurance: 540,
   nonneg:    571.12,
   gym:       463,
-  travel:    800,
-  savings:   3600,
+  travel:    1000,
+  savings:   m <= 5 ? 5600 : 6800,  // 5600 Jan–Jun, 6800 Jul–Dec
   extra:     0,
   interest:  0,
 });
@@ -1126,7 +1127,7 @@ const BUDGET_ROWS = [
 
 const initSpending = () => {
   const d = {};
-  for (let m = 0; m < 12; m++) d[m] = {food:"",beauty:"",shopping:"",home_ent:"",cab:"",gifts:""};
+  for (let m = 0; m < 12; m++) d[m] = {food:"",beauty:"",shopping:"",home:"",ent:"",cab:"",gifts:"",travel_exp:""};
   return d;
 };
 
@@ -1731,7 +1732,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 // ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
 // Bump this version number every time the file is updated.
 // The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.7.5";
+const APP_VERSION = "1.7.7";
 
 if ('serviceWorker' in navigator) {
   // Inline the service worker as a blob so we don't need a separate sw.js file
