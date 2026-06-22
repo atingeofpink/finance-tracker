@@ -1188,10 +1188,9 @@ function InterestTracker({monthIdx, spending, setSpending, setBudgetVal}) {
         value={expr}
         onChange={e=>evaluate(e.target.value)}
         placeholder="12.50 + 8.30 + 44"
-        rows={3}
         style={{width:"100%",background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,
           color:TEXT,fontSize:14,padding:"9px 11px",fontFamily:"'DM Mono',monospace",outline:"none",
-          resize:"none",lineHeight:1.6,boxSizing:"border-box",display:"block"}}
+          resize:"vertical",lineHeight:1.6,boxSizing:"border-box",display:"block",minHeight:72}}
       />
       <div style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:700,color:GREEN,
         textAlign:"right",marginTop:8}}>
@@ -1303,12 +1302,11 @@ function MonthlyTracker() {
           <textarea
             value={spendData.remarks||""}
             onChange={e=>setSpendVal("remarks", e.target.value)}
-            placeholder={`Any notes for ${MONTHS[monthIdx]}…`}
+            placeholder={"Any notes for " + MONTHS[monthIdx] + "..."}
+            rows={4}
             style={{width:"100%",background:"#0A0D14",border:`1px solid ${BORDER}`,borderRadius:8,
               color:TEXT,fontSize:13,padding:"10px 12px",fontFamily:"inherit",outline:"none",
-              resize:"none",lineHeight:1.7,boxSizing:"border-box",display:"block",
-              minHeight:80, whiteSpace:"pre-wrap", overflowWrap:"break-word"}}
-            onInput={e=>{e.target.style.height="auto";e.target.style.height=e.target.scrollHeight+"px";}}
+              resize:"vertical",lineHeight:1.7,boxSizing:"border-box",display:"block",minHeight:80}}
           />
         </div>
 
@@ -1609,7 +1607,7 @@ function BackupRestore() {
   };
 
   const syncColor = syncStatus==="ok"?GREEN : syncStatus==="error"?RED : syncStatus==="syncing"?BLUE : MUTED;
-  const syncLabel = syncStatus==="ok"?"✓ Synced to cloud" : syncStatus==="error"?"⚠ Sync failed — data saved locally" : syncStatus==="syncing"?"↑ Syncing…" : "☁ Cloud sync active";
+  const syncLabel = syncStatus==="ok"?"✓ Synced to cloud" : syncStatus==="error"?"⚠ Sync failed — data saved locally" : syncStatus==="syncing"?"Syncing..." : "☁ Cloud sync active";
 
   return (
     <div style={{padding:"16px"}}>
