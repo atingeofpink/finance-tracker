@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -1738,78 +1738,10 @@ window.addEventListener("error", function(e) {
     </div>`;
   }
 });
+</script>
 
 <script>
-// ─── AUTO-UPDATING SERVICE WORKER ────────────────────────────────────────────
-// Bump this version number every time the file is updated.
-// The app will detect the change and refresh automatically in the background.
-const APP_VERSION = "1.8.1";
-
-if ('serviceWorker' in navigator) {
-  // Inline the service worker as a blob so we don't need a separate sw.js file
-  const swCode = `
-    const VERSION = "${APP_VERSION}";
-    const CACHE = "finance-tracker-" + VERSION;
-
-    self.addEventListener("install", e => {
-      // Take over immediately without waiting
-      self.skipWaiting();
-    });
-
-    self.addEventListener("activate", e => {
-      // Delete all old caches that don't match current version
-      e.waitUntil(
-        caches.keys().then(keys =>
-          Promise.all(
-            keys.filter(k => k !== CACHE).map(k => caches.delete(k))
-          )
-        ).then(() => self.clients.claim())
-      );
-    });
-
-    self.addEventListener("fetch", e => {
-      // Always go to network first, fall back to cache
-      // This ensures updates are picked up immediately
-      e.respondWith(
-        fetch(e.request)
-          .then(res => {
-            // Cache a copy of the response
-            const clone = res.clone();
-            caches.open(CACHE).then(cache => cache.put(e.request, clone));
-            return res;
-          })
-          .catch(() => caches.match(e.request))
-      );
-    });
-
-    // Tell all open tabs to reload when a new version activates
-    self.addEventListener("message", e => {
-      if (e.data === "skipWaiting") self.skipWaiting();
-    });
-  `;
-
-  const blob = new Blob([swCode], {type: "application/javascript"});
-  const swUrl = URL.createObjectURL(blob);
-
-  navigator.serviceWorker.register(swUrl).then(reg => {
-    // When a new service worker is waiting, reload the page to apply it
-    reg.addEventListener("updatefound", () => {
-      const newWorker = reg.installing;
-      newWorker.addEventListener("statechange", () => {
-        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-          // New version available — reload silently to apply update
-          newWorker.postMessage("skipWaiting");
-          window.location.reload();
-        }
-      });
-    });
-
-    // Check for updates every time the app is opened or comes to foreground
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") reg.update();
-    });
-  }).catch(err => console.log("SW registration failed:", err));
-}
+const APP_VERSION = "1.8.3";
 </script>
 </body>
 </html>
